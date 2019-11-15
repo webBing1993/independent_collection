@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="toastTip" v-if="toastTip">
+    <div :class="isPad ? 'isPad toastTip' : 'toastTip'" v-if="toastTip">
       <img src="../../assets/ic-tig.png" alt="">
-      <p>{{toastTxt}}</p>
+      <p>{{toastTxt ? toastTxt : toastTxt_}}</p>
     </div>
   </div>
 </template>
@@ -16,6 +16,8 @@
       return {
         toastTip: false,   // 提示显示 隐藏
         timer: null,
+        toastTxt_: '',
+        isPad: sessionStorage.getItem('isPad') == 'true' ? true : false,  // 判断是否是移动iPad
       }
     },
     methods: {
@@ -23,6 +25,14 @@
 
       ]),
 
+      // 显示隐藏
+      showHide() {
+        this.toastTip = true;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+          this.toastTip = false;
+        },2000)
+      },
     },
     watch: {
       toastTxt: function (val) {
@@ -30,11 +40,8 @@
       },
     },
     mounted () {
-      this.toastTip = true;
-      clearTimeout(this.timer);
-      this.timer = setTimeout(() => {
-        this.toastTip = false;
-      },2000)
+        console.log(8888);
+      this.showHide();
     },
 
   }
@@ -54,7 +61,7 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    z-index: 5;
+    z-index: 500;
     img {
       width: 1.03rem;
       display: block;
@@ -63,6 +70,20 @@
     p {
       color: #fff;
       font-size: .56rem;
+    }
+  }
+
+  .isPad {
+    width: 340px;
+    height: 164px;
+    img {
+      width: 32px;
+      display: block;
+      margin: 46px auto 18px;
+    }
+    p {
+      font-size: 18px;
+      font-family: 'SourceHanSansCN-Medium';
     }
   }
 

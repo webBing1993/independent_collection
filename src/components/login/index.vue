@@ -43,7 +43,7 @@
     },
     methods: {
       ...mapActions([
-        'goto', 'getCode', 'loginEntry'
+        'goto', 'loginEntry', 'getPhoneCode'
       ]),
 
       //验证手机号码部分
@@ -58,24 +58,23 @@
         }else{
           this.time = 60;
           this.disabled = true;
-          this.getCode({
+          this.getPhoneCode({
             data: {
-              phone: this.phone,
-              type: 'key_channel'
+              phoneNumber: this.phone,
+              zone: '+86'
             },
             onsuccess: body => {
               this.entryAll = true;
               console.log('body.data', body.data);
-              if (body.data.code == 0) {
+              if (body.data.code == 0 || body.data.errcode == 0) {
                 if (body.data.data == '' || body.data.data == null) {
-                  this.phoneCode = 1;
                   this.timer();
                 }else {
-                  this.toastTxt = body.data.msg;
+                  this.toastTxt = body.data.msg || body.data.errmsg;
                   this.toastShow = true;
                 }
               }else {
-                this.toastTxt = body.data.msg;
+                this.toastTxt = body.data.msg || body.data.errmsg;
                 this.toastShow = true;
               }
             },
@@ -126,30 +125,28 @@
             this.loginLoading = true;
             this.loginEntry({
               data: {
-                phone: this.phone,
-                code: this.code
+                phoneNumber: this.phone,
+                zone: '+86',
+                smsCode: this.code
               },
-              onsuccess: body => {
-                console.log('body:',body);
-                if (body.data.code == 0 && body.data.data) {
-                  sessionStorage.setItem('avatar',body.data.data.avatar);
-                  sessionStorage.setItem('name',body.data.data.name);
-                  sessionStorage.session_id = body.data.data.token;
-                  sessionStorage.hotel_id = body.data.data.hotelId;
+              onsuccess: (body, headers) => {
+                if (body.data.code == 0 || body.data.errcode == 0) {
+                  sessionStorage.tokenId = body.headers['x-auth-token'];
+                  this.goto('/');
                 }else {
                   this.loginLoading = false;
-                  this.toastTxt = body.data.msg;
+                  this.toastTxt = body.data.msg ||body.data.errmsg;
                   this.toastShow = true;
                 }
               },
               onfail: body => {
                 this.loginLoading = false;
-                this.toastTxt = body.data.msg;
+                this.toastTxt = body.data.msg || body.data.errmsg;
                 this.toastShow = true;
               },
               onerror: body => {
                 this.loginLoading = false;
-                this.toastTxt = body.data.msg;
+                this.toastTxt = body.data.msg || body.data.errmsg;
                 this.toastShow = true;
               }
             })
@@ -174,7 +171,7 @@
   .login {
     display: flex;
     .login_img {
-      width: 10.6rem;
+      width: 30vw;
       height: 100vh;
       img {
         width: 100%;
@@ -183,7 +180,7 @@
       }
     }
     .content {
-      width: calc(100vw - 10.6rem);
+      width: 70vw;
       position: relative;
       height: 100vh;
       .collection_content {
@@ -209,6 +206,7 @@
             background-color: transparent;
             font-size: .56rem;
             color: #999;
+            outline: none;
           }
           .btns {
             color: #4C88FF;
@@ -219,6 +217,7 @@
             top: 50%;
             transform: translateY(-50%);
             border: none;
+            outline: none;
           }
           .btning {
             color: #999;
@@ -237,6 +236,8 @@
           font-size: .48rem;
           cursor: pointer;
           color: #fff;
+          outline: none;
+          -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
         }
       }
     }

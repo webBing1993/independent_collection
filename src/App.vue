@@ -12,9 +12,11 @@ export default {
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: 'SourceHanSansCN-Regular',SourceHanSansCN,'黑体', "PingFang SC",'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
+  background-color: #fff;
+  min-height: 100vh;
 }
 </style>

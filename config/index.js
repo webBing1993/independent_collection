@@ -10,7 +10,20 @@ module.exports = {
     // Paths
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
-    proxyTable: {},
+    proxyTable: {
+      '/independent-trade': {
+        target: 'http://qa.fortrun.cn:9051',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/independent-trade': ''
+        }
+      },
+      '/': {
+        target: 'https://wqt.fortrun.cn',
+        changeOrigin: true,
+        pathRewrite: {}
+      }
+    },
 
     // Various Dev Server settings
     host: 'localhost', // can be overwritten by process.env.HOST

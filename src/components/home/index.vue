@@ -1,15 +1,15 @@
 <template>
   <div>
-    <div class="homeIndex" v-show="showIndex">
+    <div :class="isIpad ? 'homeIndex_ homeIndex' : 'homeIndex'" v-show="showIndex">
       <div class="index_title">
-        <img src="../../assets/ic_chevron_left.png" alt="">
+        <img src="../../assets/ic_chevron_left.png" alt="" @click="quitBack" v-if="!isDevice">
         <span>欢迎使用移动收银</span>
       </div>
       <div class="index_content">
         <div class="imgLists">
-          <div class="list" @click="goto('/makeCollections')"><img src="../../assets/index_1.png" alt=""></div>
-          <div class="list" @click="goto('/preLicensing')"><img src="../../assets/index_2.png" alt=""></div>
-          <div class="list" @click="goto('/transactionQuery')"><img src="../../assets/index_3.png" alt=""></div>
+          <div class="list" @click="goto('/makeCollections')" v-if="configList_.tradeREceipt"><img src="../../assets/index_1.png" alt=""></div>
+          <div class="list" @click="goto('/preLicensing')" v-if="configList_.trandeDeposit"><img src="../../assets/index_2.png" alt=""></div>
+          <div class="list" @click="goto('/transactionQuery')" v-if="configList_.trandeRecord"><img src="../../assets/index_3.png" alt=""></div>
         </div>
       </div>
     </div>
@@ -28,37 +28,148 @@
         loadingShow: false,  // loading
         loadingText: '加载中...',    // loading 语
         showIndex: false,   // 显示,隐藏 模板
+        isDevice: false,  // 判断是否是双屏
+        isIpad: false,  // 判断是否是移动paid
+        configList_: {
+          trade: false,  // 独立支付
+          trandeDeposit: false,  // 预授权
+          trandeRecord: false,   // 交易查询
+        },   // 权限
       }
     },
     methods: {
       ...mapActions([
-        'goto', 'replaceto',
+        'goto', 'replaceto', 'configList'
       ]),
 
+      // 返回退出事件
+      quitBack() {
+        if (sessionStorage.getItem('isPad') == 'true') {
+          window.android.closeWebView();
+        }else if (sessionStorage.getItem('isDevice') == 'true') {
+          jsObj.LogOut();
+        }else {
+          this.replaceto('/login')
+        }
+      },
+
+      // 获取权限
+      getConfigList() {
+        this.configList({
+          onsuccess: body => {
+            console.log('1111', body);
+            if (body.data.errcode == 0 || body.data.code == 0) {
+                sessionStorage.setItem('configList', JSON.stringify(body.data.data.authorities));
+                let noConfig = false; // 判断是否有权限
+                if (body.data.data.authorities.length != 0) {
+                  body.data.data.authorities.forEach(item =>{
+                    if (item.authority == 'independent_trade_receipt') {
+                      this.configList_.tradeREceipt = true;
+                      noConfig = true;
+                    }
+                    if (item.authority == 'independent_trade_deposit') {
+                      this.configList_.trandeDeposit = true;
+                      noConfig = true;
+                    }
+                    if (item.authority == 'independent_trade_trading_record') {
+                      this.configList_.trandeRecord = true;
+                      noConfig = true;
+                    }
+                  });
+                }
+              if (!noConfig) {
+                this.$toastMsg({
+                  toastTip: true,
+                  toastTxt_: '当前账号无支付收款权限',
+                });
+                setTimeout(() => {
+                  if (sessionStorage.getItem('isPad') == 'true') {
+                    window.android.forceLogout();
+                  }else if (sessionStorage.getItem('isDevice') == 'true') {
+                    jsObj.LogOut();
+                  }else {
+                    this.replaceto('/login')
+                  }
+                },2000);
+              }
+            }else if (body.data.code == 100002 ||body.data.errcode == 100002) {
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '当前账号在其他设备上已登录',
+              });
+              setTimeout(() => {
+                if (sessionStorage.getItem('isPad') == 'true') {
+                  window.android.forceLogout();
+                }else if (sessionStorage.getItem('isDevice') == 'true') {
+                  jsObj.LogOut();
+                }else {
+                  this.replaceto('/login')
+                }
+              },2000);
+            }
+            this.loadingShow = false;
+          },
+          onfail: body => {
+            this.loadingShow = false;
+          },
+          onerror: body => {
+            this.loadingShow = false;
+//            this.$toastMsg({
+//              toastTip: true,
+//              toastTxt_: '当前账号无支付收款权限',
+//            });
+//            setTimeout(() => {
+//              this.quitBack()
+//            },2000);
+          }
+        })
+      },
     },
     beforeMount () {
       this.showIndex = false;
+
+      let windowUrl = null;
+      console.log( window.location.href);
+      if (window.location.href.indexOf('cn') != -1) {
+        windowUrl = window.location.href.split('.cn')[1].split('independent_collection')[0];
+      }else {
+        windowUrl = '/q/master/';
+      }
+      sessionStorage.setItem('windowUrl', windowUrl);
+
       // 这里面要处理是否满足登录条件，没有就要跳转到登录页去
       let userAgentInfo = navigator.userAgent;
       let Agents = ["Android-Reception"];   // Android移动iPad
       let Agents_ = ["FortrunRZT"];         // 双屏设备
-      let isIpad = false, isDevice = false;
+      let that = this;
       for (var v = 0; v < Agents.length; v++) {
         if (userAgentInfo.indexOf(Agents[v]) != -1) {
-          isIpad = true;
+          that.isIpad = true;
+          sessionStorage.tokenId = decodeURIComponent(window.location.href.split('token=')[1]);
           break;
         }else if (userAgentInfo.indexOf(Agents_[v]) != -1) {
-          isDevice = true;
+          that.isDevice = true;
+          sessionStorage.tokenId = decodeURIComponent(window.location.href.split('token=')[1]);
+          break;
         }
       }
-      sessionStorage.setItem('isDevice', isDevice);
-      sessionStorage.setItem('isPad', isIpad);
-      if (!isDevice && !isIpad) {
-          this.replaceto('/login');
+      sessionStorage.setItem('isDevice', that.isDevice);
+      sessionStorage.setItem('isPad', that.isIpad);
+      console.log('sessionStorage.tokenId', sessionStorage.tokenId);
+      if (!that.isDevice && !that.isIpad && !sessionStorage.tokenId) {
+        this.replaceto('/login');
       }
     },
     mounted () {
+      console.log('isIpad', this.isIpad);
       this.showIndex = true;
+      this.loadingShow = true;
+      if (sessionStorage.tokenId) {
+        this.getConfigList();
+      }
+      if (this.isIpad) {
+        window.getBack = this.quitBack;
+      }
     },
 
   }
@@ -70,34 +181,66 @@
   .homeIndex {
     .index_title {
       border-bottom: 1px solid #EEEEEE;
-      padding: .56rem .8rem;
-      position: relative;
-      text-align: center;
+      padding: 2.2vw 3.1vw;
+      position: fixed;
+      width: 93.8vw;
+      left: 0;
+      top: 0;
+      background-color: #fff;
+      text-align: left;
+      z-index: 2;
       span {
         color: #666;
         font-size: .56rem;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
       }
       img {
-        position: absolute;
-        left: .8rem;
-        top: 50%;
-        transform: translateY(-50%);
         display: block;
-        width: .96rem;
-        height: .96rem;
+        width: 3.8vw;
+        height: 3.8vw;
       }
     }
     .index_content {
-      padding: 2.16rem 2.88rem 0;
+      width: 85vw;
+      position: fixed;
+      left: 50%;
+      top: 55%;
+      transform: translate(-50%, -50%);
       .imgLists {
         display: flex;
         justify-content: space-between;
         align-items: center;
         .list {
+          width: 25%;
           img {
             display: inline-flex;
-            width: 5.8rem;
+            width: 100%;
           }
+        }
+      }
+    }
+  }
+
+  .homeIndex_ {
+    .index_title {
+      padding: 12px 15px;
+      width: calc(100vw - 30px);
+      img {
+        width: 30px;
+        height: 30px;
+      }
+      span {
+        font-size: 18px;
+      }
+    }
+    .index_content {
+      width: 70vw;
+      .imgLists {
+        .list {
+          width: 31%;
         }
       }
     }

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="collectionSuccess" v-show="collectionSuccess">
+    <div :class="isPad ? 'collectionSuccess_ collectionSuccess' : 'collectionSuccess'" v-show="collectionSuccess">
       <div class="collection_title">
         <span>{{payType == 1 ? '收款' : '预授权收款'}}</span>
       </div>
@@ -11,27 +11,27 @@
             <div class="lists">
               <div class="list">
                 <div class="name">订单号</div>
-                <div class="content">{{detail.trandId}}</div>
+                <div class="content">{{detail.flowId}}</div>
               </div>
               <div class="list">
                 <div class="name">时间</div>
-                <div class="content">{{detail.time}}</div>
+                <div class="content">{{datetimeparse(detail.tradeTime, 'yy/MM/dd hh:mm:ss')}}</div>
               </div>
               <div class="list">
                 <div class="name">收款金额</div>
-                <div class="content">{{detail.payMoney}}</div>
+                <div class="content">¥{{(detail.amount/100).toFixed(2)}}元</div>
               </div>
               <div class="list">
                 <div class="name">交易状态</div>
-                <div class="content">{{detail.status == 0 ? '未完成' : '已完成'}}</div>
+                <div class="content">{{detail.trade_status == 'SUCCESS' ? '已完成' : '未完成'}}</div>
               </div>
               <div class="list">
                 <div class="name">支付方式</div>
-                <div class="content">{{detail.payStatus}}</div>
+                <div class="content">{{detail.pay_channel}}</div>
               </div>
               <div class="list">
                 <div class="name">订单类型</div>
-                <div class="content">{{detail.orderStatus == 0 ? '收款' : '预授权收款'}}</div>
+                <div class="content">{{detail.business_type != "预授权" ? '收款' : '预授权收款'}}</div>
               </div>
             </div>
           </div>
@@ -42,10 +42,10 @@
             <span>{{payType == 1 ? '支付成功' : '预授权完成'}}</span>
           </div>
           <div class="collection_carousel">
-            <swiper :options="swiperOption" ref="mySwiper">
-              <swiper-slide v-for="(item, index) in dataimg" :key="index">
-                <img :src="swiperOption.initialSlide == index ? item.src[1] : item.src[0]" alt="">
-                <span :class="swiperOption.initialSlide == index ? 'active' : ''">{{item.txt}}</span>
+            <swiper :options="swiperOption">
+              <swiper-slide v-for="(item, index) in dataimg" :key="index" @click.native="swiperClick(index)">
+                <img :src="swiperOption.initialSlide == index ? item.icon : item.images" alt="">
+                <span :class="swiperOption.initialSlide == index ? 'active' : ''">{{item.name}}</span>
               </swiper-slide>
             </swiper>
             <div class="collection_remark">
@@ -59,12 +59,15 @@
               </div>
             </div>
           </div>
-          <div class="btn"><span @click="sure">完成</span></div>
+          <div class="btn">
+            <span @click="sure" v-if="configList.orederRecorded">完成</span>
+            <span @click="sure_" v-if="configList.orederPmsRecorded">完成并入账</span>
+          </div>
         </div>
       </div>
     </div>
     <!-- 输入房号弹框-->
-    <div class="sureTip" v-if="roomNoTip">
+    <div :class="isPad ? 'sureTip_ sureTip' : 'sureTip'" v-if="roomNoTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
@@ -106,44 +109,13 @@
         loadingText: '加载中...',    // loading 语
         collectionSuccess: false,   // 模板的显示和隐藏
         payType: sessionStorage.getItem('payType') ? sessionStorage.getItem('payType') :1,   // 1表示收款 2表示预授权收款
-        detail: {
-          trandId: '1234567890',
-          time: '2019.10.24 09:50',
-          payMoney: '200',
-          status: '1',  // 0表示未完成 1表示已完成
-          payStatus: '微信支付',
-          orderStatus: 0,   // 0表示收款 1表示预授权收款
-        },   // 收款信息
+        detail: sessionStorage.getItem('collectionSuccessList') ? JSON.parse(sessionStorage.getItem('collectionSuccessList')) : {},   // 收款信息
         swiperOption: {
           slidesPerView: 4,
           spaceBetween: 30,
           initialSlide: 0, // 设定初始化时slide的索引
-          on:{
-            // 使用es6的箭头函数，使this指向vue对象
-            click: ()=>{
-              // 通过$refs获取对应的swiper对象
-              let swiper = this.$refs.mySwiper.swiper;
-              this.swiperOption.initialSlide = swiper.clickedIndex;
-            }
-          }
         },
-        dataimg: [{
-          src: [require('../../assets/icon1.png'), require('../../assets/icon1_.png')],
-          txt: '客房消费',
-          },
-          {
-            src: [require('../../assets/icon2.png'), require('../../assets/icon2_.png')],
-            txt: '前台消费',
-          },
-          {
-            src: [require('../../assets/icon3.png'), require('../../assets/icon3_.png')],
-            txt: '餐厅消费',
-          },
-          {
-            src: [require('../../assets/icon4.png'), require('../../assets/icon4_.png')],
-            txt: '其他',
-          }
-        ],   // 轮播
+        dataimg: [],   // 轮播
         roomNo: '',  // 输入房号
         remark: '',  // 备注
         roomNoTip: false,  // 输入房号弹框
@@ -151,16 +123,45 @@
         trandeLoading: false,  // 确定loading
         isPad: sessionStorage.getItem('isPad') == 'true' ? true : false,  // 判断是否是移动iPad
         isDevice: sessionStorage.getItem('isDevice') == 'true' ? true : false,  // 判断是否是双屏设备
+        configList: {
+          orederRecorded: false,
+          orederPmsRecorded: false,
+        },  // 权限
       }
     },
     methods: {
       ...mapActions([
-        'goto', 'replaceto',
+        'goto', 'replaceto', 'getTagList', 'filllnPay'
       ]),
 
       // 完成事件
       sure () {
-        this.goto(-1);
+        this.sureFuntion(false);
+      },
+
+      sure_ () {
+        this.sureFuntion(true);
+      },
+
+      // 完成及入账公共接口
+      sureFuntion(boolean) {
+        let data = {
+          id: this.detail.id,
+          flowId: this.detail.flowId,
+          roomNo: this.roomNo,
+          remark: this.remark,
+          tag: this.dataimg[this.swiperOption.initialSlide].name,
+          checkInBill: boolean
+        };
+        console.log('data111', data);
+        this.filllnPay({
+          data: data,
+          onsuccess: body =>{
+            if (body.data.code == 0 || body.data.errcode == 0) {
+              this.goto(-1);
+            }
+          }
+        });
       },
 
       // 房号提示框
@@ -171,6 +172,11 @@
         }
       },
 
+      // tab
+      swiperClick(index) {
+        this.swiperOption.initialSlide = index;
+      },
+
       // 监听input
       changeInput_ (val) {
         let len = val.length;
@@ -178,7 +184,11 @@
           len = 15;
         }
         this.$nextTick(() => {
-          this.$refs.trandeWidth.style.width = (24 + len * 27) + 'px';
+          if (this.isPad) {
+            this.$refs.trandeWidth.style.width = (32 + len * 10) + 'px';
+          }else {
+            this.$refs.trandeWidth.style.width = (24 + len * 27) + 'px';
+          }
         })
       },
 
@@ -217,9 +227,63 @@
         this.toastTxt = '当前设备暂不支持输入';
         this.toastShow = true;
       },
+
+
+      // 获取标签
+      getTags() {
+        this.getTagList({
+          onsuccess: body => {
+            if (body.data.code == 0 || body.data.errcode == 0) {
+              body.data.data.forEach(item => {
+                let icon_ = item.icon;
+                let images_ = item.images;
+                if (icon_ && icon_.indexOf("https") < 0) {
+                  item.icon = icon_.replace('http:', 'https:')
+                }
+                if (images_ && images_.indexOf("https") < 0) {
+                  item.images = images_.replace('http:', 'https:')
+                }
+              });
+              this.dataimg = body.data.data;
+              console.log('this.dataimg', this.dataimg);
+            }
+            this.collectionSuccess = true;
+            this.loadingShow = false;
+          },
+          onfail: body => {
+            this.collectionSuccess = true;
+            this.loadingShow = false;
+          },
+          onerror: body => {
+            this.collectionSuccess = true;
+            this.loadingShow = false;
+          }
+        })
+      },
+
+      goBack () {
+        this.goto(-1);
+      },
+
     },
     mounted () {
-      this.collectionSuccess = true;
+      this.collectionSuccess = false;
+      this.loadingShow = true;
+      this.getTags();
+
+      if (this.isPad) {
+        window.getBack = this.goBack;
+      }
+      // 权限
+      let arr = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
+      arr.forEach(item => {
+        if (item.authority == 'independent_trade_receipt_order_recorded') {
+          this.configList.orederRecorded = true;
+        }
+        if (item.authority == 'independent_trade_receipt_order_pms_recorded') {
+          this.configList.orederPmsRecorded = true;
+        }
+      });
     },
 
   }
@@ -231,69 +295,77 @@
   .collectionSuccess {
     .collection_title {
       border-bottom: 1px solid #EEEEEE;
-      padding: .56rem .8rem;
-      position: relative;
+      padding: 2.2vw 3.1vw;
       text-align: center;
       color: #666;
       font-size: .56rem;
+      position: fixed;
+      width: 93.8vw;
+      background-color: #fff;
+      left: 0;
+      top: 0;
+      z-index: 1;
     }
     .collection_content {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      padding: 1.54rem 2rem 0;
+      padding: 13vw 5vw 0;
       .success_fl {
         .success_content {
           position: relative;
           opacity: 0.8;
           border: 3px solid #BAF0FC;
           border-radius: 20px;
-          width: 8.72rem;
+          width: 38vw;
           .success_title {
             background: #BAF0FC;
-            border-radius: 35.2px;
-            padding: 0 .98rem;
-            height: 1.02rem;
-            line-height: 1.02rem;
+            border-radius: 2.5vw;
+            padding: 0 4.6vw;
+            height: 4.3vw;
+            line-height: 4.3vw;
             color: #252E5B;
-            font-size: .45rem;
+            font-size: .42rem;
             position: absolute;
             left: 50%;
             top: 0;
             transform: translate(-50%, -50%);
           }
           .lists {
-            padding: 1.24rem 1rem;
+            padding: 3.2vw 4.2vw;
             .list {
-              padding: .4rem 0;
-              border-bottom: 1px solid #979797;
+              padding: 1.6vw 0;
+              border-bottom: 1px solid #e4e4e4;
               width: 100%;
               display: inline-flex;
               align-items: center;
               justify-content: space-between;
               .name {
                 color: #888;
-                font-size: .44rem;
+                font-size: .42rem;
               }
               .content {
                 color: #333;
-                font-size: .44rem;
+                font-size: .42rem;
               }
+            }
+            .list:last-of-type {
+              border-bottom: 0;
             }
           }
         }
       }
       .success_fr {
-        width: 8.88rem;
+        width: 40vw;
         .title {
           border-bottom: 1px solid #EEEEEE;
-          width: calc(100% - 2.12rem);
+          width: 100%;
           padding-bottom: .28rem;
-          padding-left: 2.12rem;
           display: inline-flex;
           align-items: center;
+          justify-content: center;
           img {
-            width: 1.32rem;
+            width: 4.6vw;
             display: inline-flex;
             margin-right: .36rem;
           }
@@ -304,15 +376,15 @@
         }
         .collection_carousel {
           width: 100%;
-          padding-top: .68rem;
+          padding-top: 2.4vw;
           img {
             display: block;
-            width: 1.24rem;
+            width: 5vw;
             margin: 0 auto .12rem;
           }
           span {
             color: #888888;
-            font-size: .36rem;
+            font-size: .32rem;
           }
           span.active {
             color: #4C88FF;
@@ -324,7 +396,7 @@
             display: block;
             margin-top: .6rem;
             .roomNo {
-              border-bottom: 1px solid #979797;
+              border-bottom: 1px solid #e4e4e4;
             }
             div {
               input {
@@ -332,7 +404,7 @@
                 font-size: .44rem;
                 color: #888888;
                 border: none;
-                padding: .48rem 0;
+                padding: 2vw 0;
                 width: 100%;
                 background-color: transparent;
               }
@@ -340,15 +412,113 @@
           }
         }
         .btn {
-          margin-top: 1.66rem;
+          margin-top: 5vw;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           span {
-            display: block;
-            background: #4C88FF;
+            width: 48%;
             border-radius: 40px;
             height: 1.24rem;
             line-height: 1.24rem;
             font-size: .48rem;
+          }
+          span:first-of-type {
+            background: #F7F7F7;
+            color: #333;
+          }
+          span:last-of-type {
+            background: #4C88FF;
             color: #fff;
+          }
+          span:only-of-type {
+            background: #4C88FF;
+            color: #fff;
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+  .collectionSuccess_ {
+    .collection_title {
+      padding: 12px 15px;
+      width: calc(100vw - 30px);
+      font-size: 18px;
+    }
+    .collection_content {
+      padding: 110px 10vw 0;
+      .success_fl {
+        width: 40%;
+        .success_content {
+          width: 100%;
+          .success_title {
+            padding: 4px 36px;
+            height: 32px;
+            line-height: 32px;
+            font-size: 15px;
+            font-family: 'SourceHanSansCN-Medium';
+          }
+          .lists {
+            padding: 34px 30px 16px;
+            .list {
+              padding: 13px 0;
+              .name {
+                font-size: 14px;
+              }
+              .content {
+                font-size: 14px;
+              }
+            }
+          }
+        }
+      }
+      .success_fr {
+        width: 44%;
+        margin-top: -20px;
+        .title {
+          padding-bottom: 16px;
+          img {
+            width: 36px;
+            margin-right: 8px;
+          }
+          span {
+            font-family: 'SourceHanSansCN-Bold';
+            font-size: 24px;
+          }
+        }
+        .collection_carousel {
+          padding-top: 24px;
+          img {
+            width: 50px;
+            margin: 0 auto .12rem;
+          }
+          span {
+            color: #888888;
+            font-size: 14px;
+          }
+          .collection_remark {
+            padding: 0 .5rem;
+            margin-top: 14px;
+            div {
+              input {
+                font-size: 14px;
+                padding: 16px 0;
+              }
+            }
+          }
+        }
+        .btn {
+          margin-top: 40px;
+          span {
+            height: 46px;
+            line-height: 46px;
+            font-size: 16px;
+            color: #fff;
+            letter-spacing: 4px;
+          }
+          span:last-of-type {
+            letter-spacing: 2px;
           }
         }
       }
@@ -356,7 +526,7 @@
   }
   .sureTip {
     .shadow {
-      background: rgba(0,0,0,0.60);
+      background: rgba(0,0,0,0.7);
       position: fixed;
       z-index: 6;
       left: 0;
@@ -376,7 +546,7 @@
       z-index: 10;
       .info_content {
         position: relative;
-        padding: .8rem 1.32rem .4rem;
+        padding: 2.8vw 5.6vw 1.4vw;
         .close {
           position: absolute;
           right: 0;
@@ -398,11 +568,11 @@
           top: 0;
         }
         .tip_lists {
-          width: 7.6rem;
+          width: 32vw;
           padding-top: 0;
           .input {
             border-bottom: 2px solid #979797;
-            padding: .24rem 0;
+            padding: 1vw 0;
             text-align: right;
             input {
               outline: none;
@@ -427,20 +597,20 @@
             }
           }
           .keyBords {
-            padding-top: .38rem;
+            padding-top: 1.6vw;
             span {
               cursor: pointer;
               display: inline-block;
-              width: 2.24rem;
-              height: 1.33rem;
+              width: 29.6%;
+              height: 4vw;
               text-align: center;
-              line-height: 1.33rem;
+              line-height: 4vw;
               background: #F7F7F7;
               border-radius: 3.03px;
               color: #333;
               font-size: .58rem;
               text-shadow: 0 2px 3px rgba(0,0,0,0.04);
-              margin: 0 .4rem .4rem 0;
+              margin: 0 1.2vw 1.2vw 0;
               position: relative;
               -moz-user-select:none;
               -ms-user-select: none;
@@ -452,10 +622,10 @@
                 left: 50%;
                 top: 50%;
                 transform: translate(-50%, -50%);
+                width: 100%;
               }
               img {
                 width: .97rem;
-                height: .63rem;
                 position: absolute;
                 left: 50%;
                 top: 50%;
@@ -487,14 +657,89 @@
           position: absolute;
           left: 50%;
           transform: translateX(-50%);
-          bottom: -2rem;
+          bottom: -8vw;
           display: block;
           background: #4C88FF;
           border-radius: .8rem;
-          width: 8.5rem;
-          padding: .4rem 0;
+          width: 32vw;
+          padding: 1.6vw 0;
           font-size: .48rem;
           color: #fff;
+        }
+      }
+    }
+  }
+  .sureTip_ {
+    .rescind_info {
+      .info_content {
+        padding: 17px 40px;
+        .close {
+          top: -30px;
+          img {
+            display: block;
+            width: 20px;
+          }
+        }
+        .title {
+          padding: 8px 50px;
+          font-size: 15px;
+          letter-spacing: 1px;
+          font-family: 'SourceHanSansCN-Medium';
+        }
+        .tip_lists {
+          .input {
+            padding: 8px 0;
+            border-bottom: 1px solid #e4e4e4;
+            input {
+              width: 64px;
+              font-size: 32px;
+            }
+            span {
+              font-size: 14px;
+            }
+          }
+          .keyBords {
+            padding-top: 1.6vw;
+            span {
+              width: 29.4%;
+              height: 48px;
+              line-height: 48px;
+              font-size: 32px;
+              margin: 0 1.6vw 1vw 0;
+              font-family: Arial;
+              img {
+                width: 24px;
+              }
+            }
+            span:nth-of-type(3n) {
+              margin-right: 0;
+            }
+            span:nth-of-type(10) {
+              span {
+                color: #4C88FF;
+                font-size: 16px;
+              }
+            }
+            span:nth-of-type(n+10) {
+              bottom: 0;
+            }
+            span:active {
+              background-color: #4C88FF;;
+              color: #f1f1f1;
+            }
+          }
+        }
+        p {
+          margin-top: 10px;
+          font-size: 14px;
+          letter-spacing: 1px;
+        }
+        .btn {
+          bottom: -60px;
+          width: 314px;
+          padding: 12px 0;
+          font-size: 16px;
+          letter-spacing: 4px;
         }
       }
     }

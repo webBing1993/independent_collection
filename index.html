@@ -2,10 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <!--<meta name="viewport" content="width=device-width,initial-scale=1.0">-->
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <!--<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />-->
+
     <title>独立收款</title>
     <script src="static/js/adaptive-version2.js"></script>
+    <script src="static/js/vconsole.min.js"></script>
     <style>
       * {
         padding: 0;
@@ -16,17 +18,14 @@
         top: 50% !important;
         left: 50% !important;
         transform: translate(-50%, -50%);
-        width: 9rem !important;
+        width: 6.8rem !important;
         border-radius: 10px !important;
       }
       .el-date-picker .el-picker-panel__content {
-        width: calc(9rem - 30px) !important;
-      }
-      .el-date-table th {
-        padding: .2rem !important;
+        width: calc(6.8rem - 30px) !important;
       }
       .el-date-picker__header-label {
-        font-size: .4rem !important;
+        font-size: .36rem !important;
       }
       .el-picker-panel__icon-btn {
         margin-top: 0 !important;
@@ -48,5 +47,15 @@
   <body>
     <div id="app"></div>
     <!-- built files will be auto injected -->
+    <script>
+      let windowUrl = null;
+      console.log( window.location.href);
+      if (window.location.href.indexOf('cn') != -1) {
+        windowUrl = window.location.href.split('.cn')[1].split('independent_collection')[0];
+      }else {
+        windowUrl = '/q/master/';
+      }
+      sessionStorage.setItem('windowUrl', windowUrl);
+    </script>
   </body>
 </html>

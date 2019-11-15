@@ -42,30 +42,17 @@ const router = new Router({
       component: resolve => require(['../components/home/transactionQuery.vue'],resolve),
     },
     {
+      path: '/wuwangluo',
+      name: 'wuwangluo',
+      component: resolve => require(['../components/home/wuwangluo.vue'],resolve),
+    },
+    {
       path: '/login',
       name: 'login',
       component: resolve => require(['../components/login/index.vue'],resolve),
     },
   ]
 });
-
-router.beforeEach((to, from, next) => {
-  console.log(from);
-  if (from.name != null || from.name != 'login') {
-    router.onError((error) => {
-      const pattern = /Loading chunk (\d)+ failed/g;
-      const isChunkLoadFailed = error.message.match(pattern);
-      if (isChunkLoadFailed) {
-        router.push('/wuwangluo');
-      }
-      return;
-    });
-    next();
-  }else {
-    next();
-  }
-});
-
 
 
 export default router
