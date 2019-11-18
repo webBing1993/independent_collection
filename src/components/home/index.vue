@@ -7,7 +7,7 @@
       </div>
       <div class="index_content">
         <div class="imgLists">
-          <div class="list" @click="goto('/makeCollections')" v-if="configList_.tradeREceipt"><img src="../../assets/index_1.png" alt=""></div>
+          <div class="list" @click="goMakeCollections" v-if="configList_.tradeREceipt"><img src="../../assets/index_1.png" alt=""></div>
           <div class="list" @click="goto('/preLicensing')" v-if="configList_.trandeDeposit"><img src="../../assets/index_2.png" alt=""></div>
           <div class="list" @click="goto('/transactionQuery')" v-if="configList_.trandeRecord"><img src="../../assets/index_3.png" alt=""></div>
         </div>
@@ -41,6 +41,23 @@
       ...mapActions([
         'goto', 'replaceto', 'configList'
       ]),
+
+      // 获取deviceId
+      getDeviceId(deviceId) {
+        sessionStorage.setItem('deviceId', deviceId)
+      },
+
+      // 在线收款预授权
+      goMakeCollections () {
+        if (this.isIpad || this.isDevice) {
+          this.goto('/makeCollections');
+        }else {
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '浏览器不支持此功能',
+          });
+        }
+      },
 
       // 返回退出事件
       quitBack() {
@@ -169,6 +186,18 @@
       }
       if (this.isIpad) {
         window.getBack = this.quitBack;
+        window.getDeviceId = this.getDeviceId;
+      }else if (this.isDevice) {
+        // 接受父页面发来的信息
+        window.addEventListener('message', (event) => {
+          let data = event.data;
+          console.log(data);
+          switch (data.cmd) {
+            case 'getParams':
+              console.log('data.params.deviceId', data.params.deviceId);
+              this.getDeviceId(data.params.deviceId);
+          }
+        })
       }
     },
 

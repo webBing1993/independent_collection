@@ -185,7 +185,7 @@
         }
         this.$nextTick(() => {
           if (this.isPad) {
-            this.$refs.trandeWidth.style.width = (32 + len * 10) + 'px';
+            this.$refs.trandeWidth.style.width = (32 + len * 12) + 'px';
           }else {
             this.$refs.trandeWidth.style.width = (24 + len * 27) + 'px';
           }
@@ -224,8 +224,10 @@
 
       // 双屏提示
       remarkTip() {
-        this.toastTxt = '当前设备暂不支持输入';
-        this.toastShow = true;
+        this.$toastMsg({
+          toastTip: true,
+          toastTxt_: '当前设备暂不支持输入',
+        });
       },
 
 

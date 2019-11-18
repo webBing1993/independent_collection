@@ -127,7 +127,7 @@
           <div class="close" @click="detailTip = false;"><img src="../../assets/ic-back-white.png" alt=""></div>
           <div class="detail_info_content">
             <div class="detail_info">
-              <div class="info_title">授权信息</div>
+              <div class="info_title">交易信息</div>
               <div class="lists">
                 <div class="list">
                   <div class="info_name">冻结金额</div>
@@ -371,8 +371,10 @@
           });
         }
         if (this.isPad || this.isDevice) {
-          this.toastTxt = '此功能仅可在网页登录使用';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '此功能仅可在网页登录使用',
+          });
           this.deriveLoading = false;
           return;
         }else {
@@ -382,7 +384,7 @@
               tradeEndDay: arr[1],
               tradeType: this.tradeType,
               flowId: this.trandeVal,
-              page: this.page,
+              page: 1,
               pageSize: 10,
             },
             onsuccess: body => {
@@ -482,8 +484,8 @@
       },
       changeInput_ (val) {
         let len = val.length;
-        if (len >= 15) {
-          len = 15;
+        if (len >= 20) {
+          len = 20;
         }
         if (this.isPad) {
           this.$refs.trandeWidth.style.width = (32 + len * 10) + 'px';
@@ -531,18 +533,24 @@
       refundBtn () {
         this.refundLoading = true;
         if (this.refundVal.length == 0) {
-          this.toastTxt = '请输入退款金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入退款金额',
+          });
           this.refundLoading = false;
           return;
         }else if (this.refundVal == 0) {
-          this.toastTxt = '请输入正确的退款金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的退款金额',
+          });
           this.refundLoading = false;
           return;
         }else if (parseFloat(this.refundVal)*100 > this.refundItem.tradeFee) {
-          this.toastTxt = '退款金额不可大于交易金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '退款金额不可大于交易金额',
+          });
           this.refundLoading = false;
           return;
         }else {
@@ -553,8 +561,10 @@
             },
             onsuccess: body => {
               if (body.data.code == 0 || body.data.errcode == 0) {
-                this.toastTxt = '退款成功';
-                this.toastShow = true;
+                this.$toastMsg({
+                  toastTip: true,
+                  toastTxt_: '退款成功',
+                });
                 this.getAllNums();
                 this.getAllTotals();
                 this.trandeLists = [];
@@ -665,14 +675,40 @@
                 item.tradeFee_ = "¥" + (item.tradeFee/100).toFixed(2);
                 item.tradeTime = this.datetimeparse(item.tradeTime, 'yy/MM/dd hh:mm');
                 item.operator = item.operator == null ? "-" : item.operator;
-                if (item.tradeStatus == 'INIT') {
-                  item.tradeStatus_ = '初始化'
-                }else if (item.tradeStatus == 'PAYING') {
-                  item.tradeStatus_ = '交易中'
-                }else if (item.tradeStatus == 'SUCCESS') {
-                  item.tradeStatus_ = '已完成'
-                }else {
-                  item.tradeStatus_ = '交易失败'
+                if (item.status == 'NORMAL') {
+                  item.tradeStatus_ = '正常'
+                }else if (item.status == 'PAYING') {
+                  item.tradeStatus_ = '支付中'
+                }else if (item.status == 'AUTH_FAILED') {
+                  item.tradeStatus_ = '授权失败'
+                }else if (item.status == 'AUTH_SUCCESS') {
+                  item.tradeStatus_ = '授权成功'
+                }else if (item.status == 'AUTH_FAILED') {
+                  item.tradeStatus_ = '授权失败'
+                }else if (item.status == 'PAY_FAILED') {
+                  item.tradeStatus_ = '支付失败'
+                }else if (item.status == 'PAY_SUCCESS') {
+                  item.tradeStatus_ = '支付成功'
+                }else if (item.status == 'DEPOSIT_CONSUME_FAILED') {
+                  item.tradeStatus_ = '押金消费失败'
+                }else if (item.status == 'DEPOSIT_CONSUME_SUCCESS') {
+                  item.tradeStatus_ = '预授权完成'
+                }else if (item.status == 'UNFREEZE_FAILED') {
+                  item.tradeStatus_ = '解冻失败'
+                }else if (item.status == 'AUTH_CANCEL_FAILED') {
+                  item.tradeStatus_ = '预授权撤销失败'
+                }else if (item.status == 'AUTH_CANCEL_SUCCESS') {
+                  item.tradeStatus_ = '预授权撤销'
+                }else if (item.status == 'AUTH_CANCEL_FAILED') {
+                  item.tradeStatus_ = '授权撤销失败'
+                }else if (item.status == 'DEPOSIT_REFUND_FAILED') {
+                  item.tradeStatus_ = '押金退款失败'
+                }else if (item.status == 'DEPOSIT_REFUND_SUCCESS') {
+                  item.tradeStatus_ = '押金退款成功'
+                }else if (item.status == 'REFUND_FAILED') {
+                  item.tradeStatus_ = '退款失败'
+                }else if (item.status == 'REFUND_SUCCESS') {
+                  item.tradeStatus_ = '退款成功'
                 }
               });
               if (body.data.data.length >= 10) {

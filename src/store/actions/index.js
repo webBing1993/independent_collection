@@ -114,7 +114,7 @@ const actions = {
       method: param.method || 'GET',
       baseURL: '/',
       headers: param.headers || {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Type': 'application/json',
         "X-auth-token": sessionStorage.tokenId
       },
       params: qs.stringify(param.params) || null,
@@ -210,7 +210,7 @@ const actions = {
   // 判断是否支持微信和支付宝
   supportList (ctx, param) {
     ctx.dispatch('resource', {
-      url: '/payment/support',
+      url: '/payment/support?deviceId='+param.deviceId,
       method: 'GET',
       onSuccess: (body, headers) => {
         param.onsuccess ? param.onsuccess(body, headers) : null

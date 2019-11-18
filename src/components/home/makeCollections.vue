@@ -121,15 +121,12 @@
       // 监听input
       changeInput (val) {
         let len = val.length;
-        if (len > 15) {
-          len = 15;
+        if (len > 14) {
+          len = 14;
         }
         if (this.isPad) {
           this.$refs.numberWidth.style.width = (46 + len * 12) + 'px';
         }else {
-          if (len >= 14) {
-            len = 14;
-          }
           this.$refs.numberWidth.style.width = (30 + len * 24) + 'px';
         }
       },
@@ -156,11 +153,15 @@
       makeCollection (type) {
         // type 1表示收款 2表示预授权
         if (this.moneyVal.length == 0) {
-          this.toastTxt = '请输入收款金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入收款金额',
+          });
         }else if (this.moneyVal == 0) {
-          this.toastTxt = '请输入正确的收款金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的收款金额',
+          });
         }else {
           sessionStorage.setItem('moneyVal', this.moneyVal);
           sessionStorage.setItem('payType', type);
@@ -188,6 +189,7 @@
       // 获取权限，是否支持微信付款和支付宝付款
       getSupport() {
         this.supportList({
+          deviceId: sessionStorage.getItem('deviceId'),
           onsuccess: body => {
             if (body.data.code == 0 || body.data.errcode == 0) {
               this.support = body.data.data;
@@ -311,8 +313,10 @@
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
-              this.toastTxt = '不支持此类型二维码';
-              this.toastShow = true;
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '不支持此类型二维码',
+              });
             }
           }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
             //  为支付宝的授权码
@@ -320,8 +324,10 @@
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {
-              this.toastTxt = '不支持此类型二维码';
-              this.toastShow = true;
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '不支持此类型二维码',
+              });
             }
           }else {
             this.toastTip = false;

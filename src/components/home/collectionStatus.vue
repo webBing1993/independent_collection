@@ -41,7 +41,7 @@
     <!-- 正在查询-->
     <div :class="isPad ? 'toastTip toastTip_' : 'toastTip'" v-if="toastTip">
       <img src="../../assets/ic-reach.png" alt="">
-      <p>正在查询支付状态</p>
+      <p>正在查询支付状态...</p>
     </div>
 
     <loadingList v-if="loadingShow" :loadingText="loadingText" style="width: calc(100vw)"></loadingList>
@@ -207,8 +207,10 @@
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
-              this.toastTxt = '不支持此类型二维码';
-              this.toastShow = true;
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '不支持此类型二维码',
+              });
             }
           }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
             //  为支付宝的授权码
@@ -216,8 +218,10 @@
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {
-              this.toastTxt = '不支持此类型二维码';
-              this.toastShow = true;
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '不支持此类型二维码',
+              });
             }
           }else {
             this.toastTip = false;

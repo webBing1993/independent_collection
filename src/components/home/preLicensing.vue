@@ -144,7 +144,7 @@
               <span  @click="keyCancel_($event)"><img src="../../assets/ic-close_.png" alt=""></span>
             </div>
           </div>
-          <el-button type="primary" :loading="inquiryLoading" class="btn" @click="inquiry">查询</el-button>
+          <el-button type="primary" :loading="inquiryLoading" class="btn" @click="inquiry">完成</el-button>
         </div>
       </div>
     </div>
@@ -381,8 +381,10 @@
           },
           onsuccess: body => {
             if (body.data.code == 0 ||body.data.errcode == 0) {
-              this.toastTxt = '撤销成功';
-              this.toastShow = true;
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '撤销成功',
+              });
               this.preLists = [];
               this.preLicensing = true;
               this.loadingShow = true;
@@ -413,18 +415,24 @@
       inquiry() {
         this.inquiryLoading = true;
         if (this.sureVal.length == 0) {
-          this.toastTxt = '请输入消费金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入消费金额',
+          });
           this.inquiryLoading = false;
           return;
         }else if (this.sureVal == 0) {
-          this.toastTxt = '请输入正确的消费金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的消费金额',
+          });
           this.inquiryLoading = false;
           return;
         }else if (parseFloat(this.sureVal)*100 > this.changeItem.tradeFee) {
-          this.toastTxt = '消费金额不可大于总金额';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '消费金额不可大于总金额',
+          });
           this.inquiryLoading = false;
           return;
         }else {
