@@ -27,9 +27,9 @@
           </div>
           <div class="collectionContent_fr">
             <!-- 发起收款btn-->
-            <div class="btn" @click="makeCollection(1)" v-if="configList.depositAuth"><img src="../../assets/btn1.png" alt=""></div>
+            <div class="btn" @click="makeCollection(1)" v-if="configList.depositAuth && (support.weixinPay.depositPay || support.weixinPay.nativePay)"><img src="../../assets/btn1.png" alt=""></div>
             <!-- 发起预授权btn-->
-            <div class="btn" @click="makeCollection(2)" v-if="configList.depositNative"><img src="../../assets/btn2.png" alt=""></div>
+            <div class="btn" @click="makeCollection(2)" v-if="configList.depositNative && (support.aliPay.depositPay || support.aliPay.nativePay)"><img src="../../assets/btn2.png" alt=""></div>
             <div class="tig">
               <span>支持</span>
               <img src="../../assets/ic-wx.png" alt="" v-if="support.weixinPay.depositPay || support.weixinPay.nativePay">
@@ -125,7 +125,7 @@
           len = 14;
         }
         if (this.isPad) {
-          this.$refs.numberWidth.style.width = (46 + len * 12) + 'px';
+          this.$refs.numberWidth.style.width = (46 + len * 13) + 'px';
         }else {
           this.$refs.numberWidth.style.width = (30 + len * 24) + 'px';
         }
