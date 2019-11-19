@@ -188,6 +188,7 @@
         window.getBack = this.quitBack;
         window.getDeviceId = this.getDeviceId;
       }else if (this.isDevice) {
+        jsObj.getDeviceId();
         // 接受父页面发来的信息
         window.addEventListener('message', (event) => {
           let data = event.data;
