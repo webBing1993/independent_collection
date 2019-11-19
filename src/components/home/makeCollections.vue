@@ -301,7 +301,6 @@
       getCode(str, deviceId) {
         console.log("str", str);
         console.log("deviceId", deviceId);
-        this.toastTip = true;
         let reg = /^\d+(\.\d+)?$/; //非负浮点数
         if (reg.test(str)) {
           // 表示是数字型
@@ -309,7 +308,8 @@
           let strTwo = strString.substring(0, 2);   // 获取前两个字符串
           if ((str.length == 18 && (parseInt(strTwo) >= 10) && parseInt(strTwo) <= 15)) {
             // 为微信的授权码
-            if ((this.payType == 1 && this.support.weixinPay.depositPay) || (this.payType == 2 && this.support.weixinPay.nativePay)) {
+            if ((this.payType == 2 && this.support.weixinPay.depositPay) || (this.payType == 1 && this.support.weixinPay.nativePay)) {
+              this.toastTip = true;
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -320,7 +320,8 @@
             }
           }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
             //  为支付宝的授权码
-            if ((this.payType == 1 && this.support.aliPay.depositPay) || (this.payType == 2 && this.support.aliPay.nativePay)) {
+            if ((this.payType == 2 && this.support.aliPay.depositPay) || (this.payType == 1 && this.support.aliPay.nativePay)) {
+              this.toastTip = true;
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -354,10 +355,10 @@
       // 权限
       let arr = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
       arr.forEach(item => {
-        if (item.authority == 'independent_trade_receipt_deposit_auth') {
+        if (item.authority == 'independent_trade_receipt_native_pay') {
           this.configList.depositAuth = true;
         }
-        if (item.authority == 'independent_trade_receipt_native_pay') {
+        if (item.authority == 'independent_trade_receipt_deposit_auth') {
           this.configList.depositNative = true;
         }
       });

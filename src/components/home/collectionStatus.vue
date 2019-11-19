@@ -203,7 +203,7 @@
           let strTwo = strString.substring(0, 2);   // 获取前两个字符串
           if ((str.length == 18 && (parseInt(strTwo) >= 10) && parseInt(strTwo) <= 15)) {
             // 为微信的授权码
-            if ((this.payType == 1 && this.support.weixinPay.depositPay) || (this.payType == 2 && this.support.weixinPay.nativePay)) {
+            if ((this.payType == 2 && this.support.weixinPay.depositPay) || (this.payType == 1 && this.support.weixinPay.nativePay)) {
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -214,7 +214,7 @@
             }
           }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
             //  为支付宝的授权码
-            if ((this.payType == 1 && this.support.aliPay.depositPay) || (this.payType == 2 && this.support.aliPay.nativePay)) {
+            if ((this.payType == 2 && this.support.aliPay.depositPay) || (this.payType == 1 && this.support.aliPay.nativePay)) {
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {

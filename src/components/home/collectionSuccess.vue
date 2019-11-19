@@ -30,8 +30,8 @@
                 <div class="content">{{detail.pay_channel}}</div>
               </div>
               <div class="list">
-                <div class="name">订单类型</div>
-                <div class="content">{{detail.business_type != "预授权" ? '收款' : '预授权收款'}}</div>
+                <div class="name">交易类型</div>
+                <div class="content">{{payType == 1 ? detail.pay_channel : detail.pay_channel+'预授权'}}</div>
               </div>
             </div>
           </div>
@@ -54,7 +54,7 @@
                 <input type="text" placeholder="请输入房号（选填）" v-model="roomNo"  v-else disabled>
               </div>
               <div class="remark" @click="isDevice ? remarkTip() : ''">
-                <input type="text" placeholder="请输入备注请输入备注（选填）" v-model="remark" v-if="!isDevice">
+                <input type="text" placeholder="请输入备注请输入备注（选填）" v-model="remark" v-if="!isDevice" maxlength="10">
                 <input type="text" placeholder="请输入备注请输入备注（选填）" v-model="remark" v-else disabled>
               </div>
             </div>

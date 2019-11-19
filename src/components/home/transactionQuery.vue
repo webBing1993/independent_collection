@@ -130,7 +130,8 @@
               <div class="info_title">交易信息</div>
               <div class="lists">
                 <div class="list">
-                  <div class="info_name">冻结金额</div>
+                  <div class="info_name" v-if="detailItem.tradeType == '支付宝预授权' || detailItem.tradeType == '微信预授权'">冻结金额</div>
+                  <div class="info_name" v-else>交易金额</div>
                   <div class="info_value">¥{{(detailObj.authorization.amount/100).toFixed(2)}}元</div>
                 </div>
                 <div class="list">
@@ -138,11 +139,11 @@
                   <div class="info_value">{{detailObj.authorization.operator ? detailObj.authorization.operator : '-'}}</div>
                 </div>
                 <div class="list">
-                  <div class="info_name">授权通道</div>
+                  <div class="info_name">交易通道</div>
                   <div class="info_value">{{detailObj.authorization.payType}}</div>
                 </div>
                 <div class="list">
-                  <div class="info_name">授权时间</div>
+                  <div class="info_name">交易时间</div>
                   <div class="info_value">{{datetimeparse(detailObj.authorization.authorizedTime, 'yy/MM/dd hh:mm:ss')}}</div>
                 </div>
                 <div class="list">
@@ -151,8 +152,9 @@
                 </div>
               </div>
             </div>
-            <div class="detail_info">
-              <div class="info_title">结算信息</div>
+            <div class="detail_info" v-if="detailObj.settle.amount != 0">
+              <div class="info_title" v-if="detailItem.tradeType == '支付宝预授权' || detailItem.tradeType == '微信预授权'">结算信息</div>
+              <div class="info_title" v-else>退款信息</div>
               <div class="lists">
                 <div class="list">
                   <div class="info_name">结算金额</div>
@@ -163,7 +165,7 @@
                   <div class="info_value">{{detailObj.settle.operator ? detailObj.settle.operator : '-'}}</div>
                 </div>
                 <div class="list">
-                  <div class="info_name">授权时间</div>
+                  <div class="info_name">交易时间</div>
                   <div class="info_value">{{datetimeparse(detailObj.settle.authorizedTime, 'yy/MM/dd hh:mm:ss')}}</div>
                 </div>
                 <div class="list">
@@ -273,6 +275,7 @@
         keyBords: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'],     // 键盘
         refundLoading: false,  // 退款loading
         detailTip: false,    // 详情弹框
+        detailItem: {},      // 详情临时数据
         detailObj: {},        // 详情内容
         trandeLoading: false,  // 查询订单号loading
         trandeTip: false,      // 订单号输入弹框
@@ -314,7 +317,6 @@
       // 搜索
       sureFun() {
         this.trandeLoading = true;
-        this.trandeLists = [];
         this.showContent = false;
         this.loadingShow = true;
         this.page = 1;
@@ -335,7 +337,6 @@
       changeTimeList() {
         this.getAllNums();
         this.getAllTotals();
-        this.trandeLists = [];
         this.showContent = false;
         this.loadingShow = true;
         this.dialogVisible = false;
@@ -353,7 +354,6 @@
         }else {
           this.tradeType = 'WEIXINPAY';
         }
-        this.trandeLists = [];
         this.refundVal = '';
         this.showContent = false;
         this.loadingShow = true;
@@ -452,6 +452,7 @@
       // 查看详情
       handleDetailEdit(index, row) {
         console.log(index, row);
+        this.detailItem = row;
         this.detailTip = true;
         // 需要请求
         this.transactionDetail({
@@ -567,7 +568,6 @@
                 });
                 this.getAllNums();
                 this.getAllTotals();
-                this.trandeLists = [];
                 this.page = 1;
                 this.getTransactionList();
               }
@@ -717,7 +717,11 @@
               }else {
                 this.busy = true;
               }
-              this.trandeLists = [...this.trandeLists, ...body.data.data];
+              if (this.page == 1) {
+                this.trandeLists = body.data.data;
+              }else {
+                this.trandeLists = [...this.trandeLists, ...body.data.data];
+              }
               if (this.trandeLists.length < 10) {
                 this.noMoreList = false;
               }else {
@@ -1306,6 +1310,10 @@
           border-top: .12rem solid #4C88FF;
           margin-top: 2.4vw;
         }
+        .detail_info:only-of-type {
+          margin-top: 0;
+          border-top: none;
+        }
       }
     }
     .detail_content {
@@ -1322,6 +1330,10 @@
       }
       .detail_info:last-of-type {
         margin-top: .4vw;
+      }
+      .detail_info:only-of-type {
+        margin-top: 0;
+        border-top: none;
       }
     }
   }
@@ -1360,6 +1372,10 @@
           border-top: 1px solid #4C88FF;
           margin-top: 10px;
         }
+        .detail_info:only-of-type {
+          margin-top: 0;
+          border-top: none;
+        }
       }
     }
     .detail_content {
@@ -1376,6 +1392,10 @@
       }
       .detail_info:last-of-type {
         margin-top: .4vw;
+      }
+      .detail_info:only-of-type {
+        margin-top: 0;
+        border-top: none;
       }
     }
   }

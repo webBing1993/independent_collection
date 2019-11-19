@@ -265,12 +265,20 @@
       getSweepingSettlementOrderId (orderId, deviceId) {
         console.log('A屏过来的orderId', orderId);
         console.log('A屏过来的deviceId', deviceId);
+        let regPos = /^\d+(\.\d+)?$/; //非负浮点数
+        let regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
+
         if (!orderId || orderId == null) {
           this.sweepingTig = true;
           this.sweepingTig_ = true;
+        }else if(!regPos.test(orderId) && !regNeg.test(orderId)){
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '该二维码无效',
+          });
+          return;
         }else {
           this.roomNo = orderId;
-          this.preLists = [];
           this.preLicensing = true;
           this.loadingShow = true;
           this.page = 1;
@@ -282,11 +290,18 @@
       getSweepIpadOrderId(orderId, deviceId) {
         console.log('orderId', orderId);
         console.log('deviceId', deviceId);
+        let regPos = /^\d+(\.\d+)?$/; //非负浮点数
+        let regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
         if (!orderId || orderId == null) {
 
+        }else if(!regPos.test(orderId) && !regNeg.test(orderId)){
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '该二维码无效',
+          });
+          return;
         }else {
           this.roomNo = orderId;
-          this.preLists = [];
           this.preLicensing = true;
           this.loadingShow = true;
           this.page = 1;
@@ -305,7 +320,6 @@
       // 搜索事件
       roomNoSearch() {
         this.timer = setTimeout(() => {
-          this.preLists = [];
           this.showContent = false;
           this.loadingShow = true;
           this.page = 1;
@@ -338,7 +352,6 @@
       closeShadow() {
         this.timeVal = this.datetimeparse(new Date(this.timeVal).getTime(), 'yy/MM/DD');
         this.dialogVisible = false;
-        this.preLists = [];
         this.preLicensing = true;
         this.loadingShow = true;
         this.page = 1;
@@ -348,7 +361,6 @@
       // tab选中
       tabChange(index) {
         this.tabIndex = index;
-        this.preLists = [];
         this.roomNo = '';
         this.showContent = false;
         this.loadingShow = true;
@@ -385,7 +397,6 @@
                 toastTip: true,
                 toastTxt_: '撤销成功',
               });
-              this.preLists = [];
               this.preLicensing = true;
               this.loadingShow = true;
               this.page = 1;
@@ -443,7 +454,6 @@
             },
             onsuccess: body => {
               if (body.data.code == 0 ||body.data.errcode == 0) {
-                this.preLists = [];
                 this.preLicensing = true;
                 this.loadingShow = true;
                 this.page = 1;
@@ -517,7 +527,11 @@
                 item.rescindLoading = false;
                 item.sureLoading = false;
               });
-              this.preLists = [...this.preLists, ...body.data.data];
+              if (this.page == 1) {
+                this.preLists = body.data.data;
+              }else {
+                this.preLists = [...this.preLists, ...body.data.data];
+              }
               if (this.preLists.length < 10) {
                 this.noMoreList = false;
               }else {

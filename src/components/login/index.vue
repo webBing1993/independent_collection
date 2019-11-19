@@ -11,7 +11,7 @@
               <el-button :plain="true" @click="sendcode" :class="btntxt == '获取验证码' || btntxt == '重新获取' ? 'btns' : 'btns btning'" v-else>{{btntxt}}</el-button>
             </div>
             <div class="code">
-              <input type="number" placeholder="请输入6位验证码" v-model="code"  maxlength="6"/>
+              <input type="number" placeholder="请输入6位验证码" v-model="code"  @input="codeInput"/>
             </div>
             <el-button type="primary" class="loginBtn" :loading="loginLoading"  @click="login()" >确定</el-button>
           </div>
@@ -46,15 +46,26 @@
         'goto', 'loginEntry', 'getPhoneCode'
       ]),
 
+      // 验证码限制6位
+      codeInput () {
+        if(this.code.length >= 6) {
+          this.code = this.code.slice(0,6);
+        }
+      },
+
       //验证手机号码部分
       sendcode(){
         let reg = 11 && /^((13|14|15|16|17|18|19)[0-9]{1}\d{8})$/;
         if(this.phone == ''){
-          this.toastTxt = '请输入手机号码';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入手机号码',
+          });
         }else if(!reg.test(this.phone)){
-          this.toastTxt = '手机格式不正确';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '手机格式不正确',
+          });
         }else{
           this.time = 60;
           this.disabled = true;
@@ -102,25 +113,37 @@
       login(){
         let reg = 11 && /^((13|14|15|16|17|18|19)[0-9]{1}\d{8})$/;
         if(this.phone == ''){
-          this.toastTxt = '请输入手机号码';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入手机号码',
+          });
         }else if(!reg.test(this.phone)){
-          this.toastTxt = '手机格式不正确';
-          this.toastShow = true;
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '手机格式不正确',
+          });
           if (this.code == '') {
-            this.toastTxt = '请输入验证码';
-            this.toastShow = true;
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入验证码',
+            });
           }else if (this.code.length > 6) {
-            this.toastTxt = '请输入６位数验证码';
-            this.toastShow = true;
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入６位数验证码',
+            });
           }
         }else {
           if (this.code == '') {
-            this.toastTxt = '请输入验证码';
-            this.toastShow = true;
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入验证码',
+            });
           } else if (this.code.length != 6) {
-            this.toastTxt = '请输入６位数验证码';
-            this.toastShow = true;
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入６位数验证码',
+            });
           } else {
             this.loginLoading = true;
             this.loginEntry({
