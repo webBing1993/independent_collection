@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'preLicensing preLicensing_' : 'preLicensing '" v-show="preLicensing">
+    <div :class="isPad ? 'preLicensing preLicensing_' : isDevice ? 'preLicensing preLicensingDevice' : 'preLicensing preLicensingDevice'" v-show="preLicensing">
       <div class="collection_fl">
         <div class="collection_fl_fixed">
           <div class="quitBack">
@@ -58,7 +58,7 @@
                 <div class="list_title">
                   <span class="time">{{datetimeparse(item.tradeTime, 'yy/MM/dd hh:mm')}}</span>
                   <span class="trandId">交易单号：{{item.flowId}}</span>
-                  <span class="roomNo">房间号：{{item.roomNo}}</span>
+                  <span class="roomNo">房间号：{{item.roomNo ? item.roomNo : '-'}}</span>
                 </div>
                 <div class="list_content">
                   <div class="list_fl">
@@ -96,11 +96,11 @@
     </div>
 
     <!-- 撤销弹框-->
-    <div :class="isPad ? 'rescindTip_ rescindTip' : 'rescindTip'" v-if="rescindTip">
+    <div :class="isPad ? 'rescindTip_ rescindTip' : isDevice ? 'rescindTip rescindTipDevice' : 'rescindTip'" v-if="rescindTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
-          <div class="close" @click="rescindTip = false;"><img src="../../assets/ic-back-white.png" alt=""></div>
+          <div class="close" @click="rescindTip = false;rescindLoading_=false"><img src="../../assets/ic-back-white.png" alt=""></div>
           <div class="title">预授权信息</div>
           <div class="tip_lists">
             <div class="list">
@@ -121,22 +121,22 @@
             </div>
           </div>
           <p>*撤销后该笔金额会原路返回至用户账户</p>
-          <el-button type="primary" :loading="rescindLoading_" class="btn" @click="rescindSure">确认撤销</el-button>
+          <el-button type="primary" :loading="rescindLoading_" class="btn" tapmode  @click="rescindSure">确认撤销</el-button>
         </div>
       </div>
     </div>
 
     <!-- 完成弹框-->
-    <div :class="isPad ? 'sureTip sureTip_' : 'sureTip'" v-if="sureTip">
+    <div :class="isPad ? 'sureTip sureTip_' : isDevice ? 'sureTip sureTipDevice' : 'sureTip'" v-if="sureTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
-          <div class="close" @click="sureTip = false;"><img src="../../assets/ic-back-white.png" alt=""></div>
+          <div class="close" @click="sureTipClose"><img src="../../assets/ic-back-white.png" alt=""></div>
           <div class="title">消费金额</div>
           <div class="tip_lists">
             <div class="input">
               <span>¥</span>
-              <input type="number" placeholder="0.0" v-model="sureVal" ref="numberWidth" @input="changeInput(sureVal)" v-if="!isPad">
+              <input type="text" placeholder="0.0" v-model="sureVal" ref="numberWidth" @input="changeInput(sureVal)" v-if="!isPad">
               <input type="text" placeholder="0.0" v-model="sureVal" ref="numberWidth" v-else disabled>
             </div>
             <div class="keyBords">
@@ -222,6 +222,10 @@
 
       // 返回上一页
       goBack() {
+        if (this.isDevice) {
+          window.parent.sonPageClick(0);
+          window.removeEventListener('message', this.eventMessage);
+        }
         this.goto(-1);
       },
 
@@ -284,6 +288,18 @@
           this.page = 1;
           this.getSweepList();
         }
+
+
+        let that = this;
+        // 接受父页面发来的信息
+        window.parent.sonPageClick(0);
+        window.removeEventListener('message', that.eventMessage);
+
+        this.$nextTick(() => {
+          window.parent.sonPageClick(1);
+          window.addEventListener('message', that.eventMessage)
+        })
+
       },
 
       // 接收移动iPad传过来的orderId
@@ -307,6 +323,7 @@
           this.page = 1;
           this.getSweepList();
         }
+
       },
 
       // 键盘事件
@@ -361,7 +378,6 @@
       // tab选中
       tabChange(index) {
         this.tabIndex = index;
-        this.roomNo = '';
         this.showContent = false;
         this.loadingShow = true;
         this.page = 1;
@@ -488,6 +504,8 @@
         }
         if (this.isPad) {
           this.$refs.numberWidth.style.width = (64 + len * 8) + 'px';
+        }else if (this.isDevice) {
+          this.$refs.numberWidth.style.width = (80 + len * 15) + 'px';
         }else {
           this.$refs.numberWidth.style.width = (25 + len * 21) + 'px';
         }
@@ -496,10 +514,42 @@
       // 查询键盘事件
       keyEntry_(event, item) {
         event.preventDefault();
-        if (!/^\d+$/.test(parseFloat(this.sureVal) * 10) && this.sureVal != '' && this.sureVal.length != 0) {
-          return;
-        }else {
+
+        let reg = /^[+]{0,1}(\d+)$|^[+]{0,1}(\d+\.\d+)$/;
+        if ((this.sureVal != '' && /^\d+$/.test(parseFloat(this.sureVal) * 10)) || this.sureVal == '') {
           this.sureVal+=item;
+          let arr = [];
+          if (this.sureVal.indexOf('.') > 0) {
+            arr = this.sureVal.split('.');
+          }
+          if (this.sureVal.length == 2 && this.sureVal.slice(0, 1) == 0 && item != '.') {
+            this.keyCancel_(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的消费金额',
+            });
+          }else if (reg.test(this.sureVal) || arr.length == 2) {
+            if (((this.sureVal) * 100 == 0 && this.sureVal.length >= 4) || (this.sureVal.indexOf('.') > 0 && parseFloat(this.sureVal.split('.')[0]) == 0 && this.sureVal.split('.')[0].length > 1) || this.sureVal.indexOf('.') > 0 && this.sureVal.split('.')[1].length > 2) {
+              this.keyCancel_(event);
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '请输入正确的消费金额',
+              });
+            }else {
+
+            }
+          }else {
+            this.keyCancel_(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的消费金额',
+            });
+          }
+        }else {
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的消费金额',
+          });
         }
         this.changeInput(this.sureVal);
       },
@@ -511,8 +561,18 @@
         this.changeInput(this.sureVal);
       },
 
+      // 完成关闭弹框
+      sureTipClose () {
+        this.sureTip = false;
+        this.inquiryLoading = false;
+        this.sureVal = '';
+        this.changeInput(this.sureVal);
+      },
+
       // 获取数据列表
       getSweepList() {
+        this.sweepingTig = false;
+        this.sweepingTig_ = false;
         this.getSweepLists({
           data: {
             tradeType: this.tabIndex == 0 ? '' : this.tabIndex == 1 ? 'ALIPAY' : ' WEIXINPAY',
@@ -564,12 +624,19 @@
         });
       },
 
+      eventMessage (event) {
+        // 接受父页面发来的信息
+        let data = event.data;
+        switch (data.cmd) {
+          case 'getParams':
+            console.log('data.params.key11', data.params.key);
+            console.log('data.params.deviceId11', data.params.deviceId);
+            this.getSweepIpadOrderId(data.params.key, data.params.deviceId)
+        }
+      }
+
     },
-    mounted () {
-      this.loadingShow = true;
-      this.preLicensing = false;
-      this.timeVal = this.datetimeparse(new Date().getTime(), 'yy/MM/DD');
-      this.getSweepList();
+    beforeMount () {
 
       // 权限
       let arr = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
@@ -582,19 +649,26 @@
         }
       });
 
+    },
+    mounted () {
+      this.loadingShow = true;
+      this.preLicensing = false;
+      this.timeVal = this.datetimeparse(new Date().getTime(), 'yy/MM/DD');
+      this.getSweepList();
+
       if (this.isPad) {
         window.getSweepIpadOrderId = this.getSweepIpadOrderId;
         window.getBack = this.goBack;
       }else if (this.isDevice) {
+
+        let that = this;
         // 接受父页面发来的信息
-        window.addEventListener('message', (event) => {
-          let data = event.data;
-          switch (data.cmd) {
-            case 'getParams':
-              console.log('data.params.key11', data.params.key);
-              console.log('data.params.deviceId11', data.params.deviceId);
-              this.getSweepIpadOrderId(data.params.key, data.params.deviceId)
-          }
+        window.parent.sonPageClick(0);
+        window.removeEventListener('message', that.eventMessage);
+
+        this.$nextTick(() => {
+          window.parent.sonPageClick(1);
+          window.addEventListener('message', that.eventMessage)
         })
       }
     },
@@ -1071,6 +1145,151 @@
     }
   }
 
+  .preLicensingDevice {
+    padding: 0 30px;
+    width: calc(100vw - 60px);
+    .collection_fl {
+      width: 25vw;
+      .collection_fl_fixed {
+        left: 30px;
+      }
+      .quitBack {
+        padding: 20px 0 30px;
+        img {
+          width: 34px;
+        }
+      }
+      .collection_fl_content {
+        .settle_accounts {
+          height: 138px;
+          margin-bottom: 30px;
+          img {
+            width: 48px;
+            margin-right: 54px;
+          }
+          span {
+            font-size: 26px;
+          }
+        }
+        .pre_search {
+          padding: 30px 45px 70px;
+          .search_title {
+            font-size: 20px;
+            margin-bottom: 30px;
+          }
+          input {
+            width: calc(100% - 30px);
+            height: 58px;
+            line-height: 58px;
+            font-size: 24px;
+            padding: 0 15px;
+          }
+          .keyBords {
+            margin-top: 60px;
+            span {
+              margin: 0 1.1vw .6vw 0;
+              color: #fff;
+              font-size: 34px;
+              padding: 8px 0;
+              img {
+                width: 2.2vw;
+              }
+            }
+            span:nth-of-type(10) {
+              font-size: 20px;
+            }
+          }
+        }
+      }
+    }
+    .collection_fr {
+      width: 66vw;
+      padding: 20px 0 30px;
+      margin-left: 0;
+      .collection_fr_title {
+        margin-bottom: 30px;
+        .pre_time {
+          padding: 8px 50px;;
+          .time {
+            font-size: 20px;
+            margin-right: 24px;
+          }
+          /deep/ .el-date-editor.el-input, .el-date-editor.el-input__inner {
+            width: 120px;
+          }
+          /deep/ .el-input__inner {
+            font-size: 20px;
+          }
+          img {
+            width: 10px;
+            right: 30px;
+          }
+        }
+        .pre_tabs {
+          margin-left: 60px;
+          span {
+            margin-right: 30px;
+            color: #333;
+            padding: 10px 30px;
+            font-size: 24px;
+          }
+          span.active {
+            font-size: 24px;
+          }
+        }
+      }
+      .collection_fr_content {
+        .infinite-list-wrapper {
+          .list {
+            .list-item {
+              margin-bottom: 16px;
+              .list_title {
+                padding: 18px 40px;
+                span {
+                  font-size: 20px;
+                }
+              }
+              .list_content {
+                padding: 20px 40px;
+                width: calc(100% - 80px);
+                .list_fl {
+                  .title {
+                    font-size: 20px;
+                    margin-bottom: 12px;
+                  }
+                  .money {
+                    font-size: 20px;
+                    span {
+                      font-size: 20px;
+                      span {
+                        font-size: 24px;
+                      }
+                    }
+                  }
+                }
+                .list_fr {
+                  .rescindBtn {
+                    padding: 18px 60px;
+                    font-size: 20px;
+                    margin-right: 15px;
+                  }
+                  .sureBtn {
+                    padding: 18px 60px;
+                    font-size: 20px;
+                  }
+                }
+              }
+            }
+          }
+          p {
+            font-size: 20px;
+            padding: 30px 0;
+          }
+        }
+      }
+    }
+  }
+
   .sweepingTig {
     .shadow {
       position: fixed;
@@ -1413,6 +1632,62 @@
       }
     }
   }
+  .sureTipDevice {
+    .rescind_info {
+      .info_content {
+        position: relative;
+        padding: 30px 50px 20px;
+        .close {
+          top: -76px;
+          img {
+            width: 40px;
+          }
+        }
+        .title {
+          padding: 15px 56px;
+          font-size: 26px;
+        }
+        .tip_lists {
+          width: 25vw;
+          .input {
+            border-bottom: 1px solid #eee;
+            input {
+              width: 80px;
+              font-size: 40px;
+            }
+            span {
+              font-size: 30px;
+              margin-right: 2px;
+            }
+          }
+          .keyBords {
+            padding-top: 32px;
+            span {
+              height: 76px;
+              line-height: 76px;
+              font-size: 40px;
+              margin: 0 1.1vw 1vw 0;
+              font-weight: bold;
+              img {
+                width: 52px;
+              }
+            }
+            span:nth-of-type(10) {
+              span {
+                font-weight: normal;
+                font-size: 30px;
+              }
+            }
+          }
+        }
+        .btn {
+          bottom: -138px;
+          padding: 30px 0;
+          font-size: 28px;
+        }
+      }
+    }
+  }
   .rescindTip_ {
     .rescind_info {
       .info_content {
@@ -1454,6 +1729,45 @@
           padding: 10px 0;
           font-size: 16px;
           letter-spacing: 4px;
+        }
+      }
+    }
+  }
+
+  .rescindTipDevice {
+    .rescind_info {
+      .info_content {
+        padding: 20px 50px 40px;
+        width: 30vw;
+        .close {
+          top: -76px;
+          img {
+            width: 40px;
+          }
+        }
+        .title {
+          padding: 15px 48px;
+          font-size: 24px;
+        }
+        .tip_lists {
+          .list {
+            padding: 20px 0;
+            .name {
+              font-size: 20px;
+            }
+            .info {
+              font-size: 20px;
+            }
+          }
+        }
+        p {
+          margin-top: 20px;
+          font-size: 20px;
+        }
+        .btn {
+          bottom: -138px;
+          padding: 30px 0;
+          font-size: 24px;
         }
       }
     }

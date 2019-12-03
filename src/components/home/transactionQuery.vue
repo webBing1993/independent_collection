@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'transactionQuery_ transactionQuery' : 'transactionQuery'" v-show="transactionQuery">
+    <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery'" v-show="transactionQuery">
       <div class="collection_title">
         <img src="../../assets/ic_chevron_left.png" alt="" @click="goto(-1)" class="gobackBg">
         <div class="dates_search">
@@ -22,9 +22,8 @@
           <!-- 阴影-->
           <div class="shadow" v-if="dialogVisible"></div>
 
-          <div class="search" @click="isPad ? trandeTipShow() : ''">
-            <input type="number" placeholder="请输入订单号查询" @focus="trandeTipShow" v-model="trandeVal" v-if="!isPad">
-            <input type="number" placeholder="请输入订单号查询" v-model="trandeVal" v-else disabled>
+          <div class="search" @click="trandeTipShow()">
+            <input type="number" placeholder="请输入订单号查询" v-model="trandeVal" disabled>
             <el-button type="primary" class="searchBtn" >搜索</el-button>
           </div>
         </div>
@@ -55,34 +54,35 @@
           <span :class="tabIndex == 2 ? 'tab active' : 'tab'" @click="tabChange(2)">微信</span>
           <el-button type="primary" :loading="deriveLoading" class="deriveBtn" @click="deriveBtn" v-if="configList.exportExcel">导出XSL</el-button>
         </div>
-        <div class="infinite-list-wrapper" style="overflow:auto" v-if="trandeLists.length != 0 && showContent">
+        <div class="infinite-list-wrapper" v-if="trandeLists.length != 0 && showContent">
           <ul
             class="list"
             v-infinite-scroll="loadMore"
             infinite-scroll-disabled="busy"
-            infinite-scroll-distance="10">
+            infinite-scroll-distance="80"
+          >
             <el-table
               :data="trandeLists"
               style="width: 100%">
               <el-table-column
                 prop="tradeTime"
                 label="交易时间"
-                min-width="18%">
+                min-width="14%">
               </el-table-column>
               <el-table-column
                 prop="flowId"
                 label="商户订单号"
-                min-width="20%">
+                min-width="18%">
               </el-table-column>
               <el-table-column
                 prop="tradeType"
                 label="交易类型"
-                min-width="10%">
+                min-width="12%">
               </el-table-column>
               <el-table-column
                 prop="operator"
                 label="操作员"
-                min-width="10%">
+                min-width="12%">
               </el-table-column>
               <el-table-column
                 prop="tradeFee_"
@@ -92,7 +92,7 @@
               <el-table-column
                 prop="tradeStatus_"
                 label="交易状态"
-                min-width="10%">
+                min-width="12%">
               </el-table-column>
               <el-table-column label="操作" min-width="10%">
                 <template slot-scope="scope">
@@ -120,11 +120,11 @@
       </div>
     </div>
     <!-- 详情弹框-->
-    <div  :class="isPad ? 'detailTip detailTip_' : 'detailTip'" v-if="detailTip">
+    <div  :class="isPad ? 'detailTip detailTip_' : isDevice ? 'detailTip detailTipDevice' : 'detailTip'" v-if="detailTip">
       <div class="shadow"></div>
       <div class="detail_content">
         <div class="info_content">
-          <div class="close" @click="detailTip = false;"><img src="../../assets/ic-back-white.png" alt=""></div>
+          <div class="close" @click="detailTip = false;detailItem = {};"><img src="../../assets/ic-back-white.png" alt=""></div>
           <div class="detail_info_content">
             <div class="detail_info">
               <div class="info_title">交易信息</div>
@@ -152,12 +152,13 @@
                 </div>
               </div>
             </div>
-            <div class="detail_info" v-if="detailObj.settle.amount != 0">
+            <div class="detail_info" v-if="(detailItem.tradeType == '支付宝预授权' || detailItem.tradeType == '微信预授权') || (detailObj.settle.amount != 0)">
               <div class="info_title" v-if="detailItem.tradeType == '支付宝预授权' || detailItem.tradeType == '微信预授权'">结算信息</div>
               <div class="info_title" v-else>退款信息</div>
               <div class="lists">
                 <div class="list">
-                  <div class="info_name">结算金额</div>
+                  <div class="info_name" v-if="detailItem.tradeType == '支付宝预授权' || detailItem.tradeType == '微信预授权'">结算金额</div>
+                  <div class="info_name" v-else>退款金额</div>
                   <div class="info_value">¥{{(detailObj.settle.amount/100).toFixed(2)}}元</div>
                 </div>
                 <div class="list">
@@ -179,7 +180,7 @@
       </div>
     </div>
     <!-- 退款弹框-->
-    <div :class="isPad ? 'sureTip_ sureTip' : 'sureTip'" v-if="refundTip">
+    <div :class="isPad ? 'sureTip_ sureTip' : isDevice ? 'sureTip sureTipDevice' : 'sureTip'" v-if="refundTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
@@ -201,7 +202,7 @@
     </div>
 
     <!-- 输入订单号弹框-->
-    <div :class="isPad ? 'sureTip_ sureTip trandeTip' : 'sureTip trandeTip'" v-if="trandeTip">
+    <div :class="isPad ? 'sureTip_ sureTip trandeTip' : isDevice ? 'sureTip trandeTip sureTipDevice sureTipDevice_' : 'sureTip trandeTip'" v-if="trandeTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
@@ -266,7 +267,7 @@
         trandeLists: [],   // 交易数据
         showContent: false,  // 交易数据隐藏显示
         loading: false,  // 加载中
-        busy: true,    // 禁止加载
+        busy: false,    // 禁止加载
         noMoreList: true,  // 无更多数据的初始化隐藏文字
         page: 1,    // 页数
         refundTip: false,  // 发起退款弹框
@@ -311,7 +312,9 @@
       // 交易号弹框显示
       trandeTipShow() {
         this.trandeTip = true;
-        this.changeInput_(this.trandeVal);
+        this.$nextTick(() => {
+          this.changeInput_(this.trandeVal);
+        })
       },
 
       // 搜索
@@ -320,7 +323,7 @@
         this.showContent = false;
         this.loadingShow = true;
         this.page = 1;
-        this.getTransactionList();
+        this.getTransactionList(0);
       },
 
       // 日期框显示
@@ -440,7 +443,12 @@
       trandeTipCancel () {
         this.trandeTip = false;
         this.trandeVal= '';
-        this.changeInput(this.trandeVal);
+        this.$nextTick(() => {
+          this.changeInput(this.trandeVal);
+        });
+        this.loadingShow = true;
+        this.page = 1;
+        this.getTransactionList(0);
       },
 
       sureTipCancel () {
@@ -478,7 +486,9 @@
           len = 14;
         }
         if (this.isPad) {
-          this.$refs.numberWidth.style.width = (64 + len * 12) + 'px';
+          this.$refs.numberWidth.style.width = (64 + len * 10) + 'px';
+        }else if (this.isDevice) {
+          this.$refs.numberWidth.style.width = (80 + len * 15) + 'px';
         }else {
           this.$refs.numberWidth.style.width = (24 + len * 21) + 'px';
         }
@@ -489,7 +499,9 @@
           len = 20;
         }
         if (this.isPad) {
-          this.$refs.trandeWidth.style.width = (32 + len * 10) + 'px';
+          this.$refs.trandeWidth.style.width = (32 + len * 18) + 'px';
+        }else if (this.isDevice) {
+          this.$refs.trandeWidth.style.width = (40 + len * 20) + 'px';
         }else {
           this.$refs.trandeWidth.style.width = (24 + len * 27) + 'px';
         }
@@ -498,10 +510,42 @@
       // 查询键盘事件
       keyEntry(event, item) {
         event.preventDefault();
-        if (!/^\d+$/.test(parseFloat(this.refundVal) * 10) && this.refundVal != '' && this.refundVal.length != 0) {
-          return;
-        }else {
+
+        let reg = /^[+]{0,1}(\d+)$|^[+]{0,1}(\d+\.\d+)$/;
+        if ((this.refundVal != '' && /^\d+$/.test(parseFloat(this.refundVal) * 10)) || this.refundVal == '') {
           this.refundVal+=item;
+          let arr = [];
+          if (this.refundVal.indexOf('.') > 0) {
+            arr = this.refundVal.split('.');
+          }
+          if (this.refundVal.length == 2 && this.refundVal.slice(0, 1) == 0 && item != '.') {
+            this.keyCancel(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的退款金额',
+            });
+          }else if (reg.test(this.refundVal) || arr.length == 2) {
+            if (((this.refundVal) * 100 == 0 && this.refundVal.length >= 4) || (this.refundVal.indexOf('.') > 0 && parseFloat(this.refundVal.split('.')[0]) == 0 && this.refundVal.split('.')[0].length > 1) || this.refundVal.indexOf('.') > 0 && this.refundVal.split('.')[1].length > 2) {
+              this.keyCancel(event);
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '请输入正确的退款金额',
+              });
+            }else {
+
+            }
+          }else {
+            this.keyCancel(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的退款金额',
+            });
+          }
+        }else {
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的退款金额',
+          });
         }
         this.changeInput(this.refundVal);
       },
@@ -566,10 +610,12 @@
                   toastTip: true,
                   toastTxt_: '退款成功',
                 });
-                this.getAllNums();
-                this.getAllTotals();
-                this.page = 1;
-                this.getTransactionList();
+                setTimeout(() => {
+                  this.getAllNums();
+                  this.getAllTotals();
+                  this.page = 1;
+                  this.getTransactionList(0);
+                }, 200)
               }
               this.refundVal = '';
               this.refundLoading = false;
@@ -647,7 +693,7 @@
       },
 
       // 数据请求接口
-      getTransactionList() {
+      getTransactionList(type) {
         let arr = this.dateArr;
         if (new Date(arr[0]).getTime() > new Date(arr[1]).getTime()) {
           arr.sort(function(a, b) {
@@ -667,7 +713,9 @@
             this.loading = false;
             this.loadingShow = false;
             this.trandeLoading = false;
-            this.trandeTip = false;
+            if (type == 0) {
+              this.trandeTip = false;
+            }
             this.transactionQuery = true;
             this.showContent = true;
             if (body.data.code == 0 || body.data.errcode == 0) {
@@ -717,6 +765,7 @@
               }else {
                 this.busy = true;
               }
+              console.log('this.busy', this.busy);
               if (this.page == 1) {
                 this.trandeLists = body.data.data;
               }else {
@@ -754,21 +803,6 @@
 
     },
     beforeMount() {
-      let startTime = this.datetimeparse(new Date(new Date(new Date().toLocaleDateString()).getTime()), 'yy/MM/dd');
-      let endTime = this.datetimeparse(new Date(new Date(new Date().toLocaleDateString()).getTime()+24*60*60*1000-1), 'yy/MM/dd');
-      this.dateArr.push(startTime, endTime);
-    },
-    mounted () {
-      this.transactionQuery = false;
-      this.loadingShow = true;
-      this.getAllNums();
-      this.getAllTotals();
-      this.page = 1;
-      this.getTransactionList();
-
-      if (this.isPad) {
-        window.getBack = this.goBack;
-      }
 
       // 权限
       let arr_ = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
@@ -784,14 +818,33 @@
         }
       });
 
+      let startTime = this.datetimeparse(new Date(new Date(new Date().toLocaleDateString()).getTime()), 'yy/MM/dd');
+      let endTime = this.datetimeparse(new Date(new Date(new Date().toLocaleDateString()).getTime()+24*60*60*1000-1), 'yy/MM/dd');
+      this.dateArr.push(startTime, endTime);
+    },
+    mounted () {
+      this.transactionQuery = false;
+      this.loadingShow = true;
+      this.getAllNums();
+      this.getAllTotals();
+      this.page = 1;
+      this.getTransactionList(0);
+
+      if (this.isPad) {
+        window.getBack = this.goBack;
+      }
+
     },
     computed: {
       dateArrVal() {        // 日期数组
         if (this.dateArr.length > 2) {
           this.dateArr.splice(0,1);
         }else if (this.dateArr.length < 2) {
-          this.dateArr = this.dateArr_;
+          this.dateArr = [];
+          this.dateArr.push(this.dateArr_[1]);
+          this.dateArr.push(this.dateArr_[1]);
         }
+        console.log(this.dateArr);
         this.dateArr_ = this.dateArr;
         return this.dateArr;
       },
@@ -934,7 +987,7 @@
       }
     }
     .collection_content {
-      padding: 13vw 4.6vw 1.2vw;
+      padding: 10vw 4.6vw 1.2vw;
       position: relative;
       .topList {
         margin-bottom: 4.7vw;
@@ -949,7 +1002,7 @@
             text-align: left;
             .list_top {
               font-size: .44rem;
-              border-bottom: .6vw;
+              margin-bottom: .6vw;
             }
             .list_bottom {
               font-size: .36rem;
@@ -1018,7 +1071,10 @@
         }
       }
       .infinite-list-wrapper {
-        width: 100%;
+        ul {
+          overflow-y: auto;
+          height: 100%;
+        }
         /deep/ .el-table {
           width: 100%;
           border-radius: 4px;
@@ -1045,9 +1101,11 @@
           font-size: .32rem;
         }
         /deep/ .el-button--mini {
-          padding: 0;
           border: none;
           color: #4C88FF;
+          padding: 5px 0;
+        }
+        /deep/ .el-button--mini span {
           font-size: .32rem;
           font-family: 'SourceHanSansCN-Medium';
         }
@@ -1163,7 +1221,7 @@
             padding: 12px 60px 12px 12px;
             .list_top {
               font-size: 16px;
-              border-bottom: 10px;
+              margin-bottom: 10px;
             }
             .list_bottom {
               font-size: 14px;
@@ -1211,7 +1269,7 @@
         /deep/ .el-table .cell {
           font-size: 14px;
         }
-        /deep/ .el-button--mini {
+        /deep/ .el-button--mini span {
           font-size: 14px;
         }
         /deep/ td:last-of-type .el-button--mini {
@@ -1233,6 +1291,157 @@
         transform: translate(-50%, -20px);
         img {
           width: 280px;
+        }
+      }
+    }
+  }
+
+  .transactionQueryDevice {
+    .collection_title {
+      width: calc(100vw - 120px);
+      padding: 24px 60px;
+      .gobackBg {
+        left: 60px;
+        width: 34px;
+      }
+      .dates_search {
+        .dates {
+          padding: 8px 40px;
+          .dates_title {
+            font-size: 20px;
+            width: 54px;
+            margin-right: 6px;
+          }
+          .datesArr {
+            font-size: 20px;
+            span {
+              display: block;
+            }
+          }
+          /deep/ .el-input__prefix {
+            display: none;
+          }
+          /deep/ .el-date-editor.el-input, .el-date-editor.el-input__inner {
+            width: 1px;
+            background-color: #f7f7f7;
+          }
+          /deep/ .el-input--prefix .el-input__inner {
+            padding: 0;
+            width: 1px;
+            border: none;
+            background-color: #f7f7f7;
+          }
+        }
+        .search {
+          margin-left: 80px;
+          border-radius: 40px;
+          width: 30vw;
+          padding: 0 180px 0 30px;
+          height: 58px;
+          input {
+            font-size: 20px;
+            line-height: 60px;
+          }
+          input:-moz-placeholder {
+            font-size: 20px;
+          }
+          input:-ms-input-placeholder {
+            font-size: 20px;
+          }
+          input::-moz-placeholder {
+            font-size: 20px;
+          }
+          input::-webkit-input-placeholder {
+            font-size: 20px;
+          }
+          .searchBtn {
+            border-radius: 0 40px 40px 0;
+            width: 180px;
+            height: 60px;
+            font-size: 20px;
+          }
+        }
+      }
+    }
+    .collection_content {
+      padding: 150px 60px 30px;
+      .topList {
+        margin-bottom: 60px;
+        .lists {
+          .list {
+            margin-right: 80px;
+            padding: 30px 40px 30px;
+            border-radius: 8px;
+            .list_top {
+              font-size: 22px;
+              margin-bottom: 8px;
+            }
+            .list_bottom {
+              font-size: 20px;
+            }
+          }
+          .list:first-of-type {
+            .list_bottom {
+              span:first-of-type {
+                margin-right: 45px;
+              }
+            }
+          }
+          .list:last-of-type {
+            padding-right: 60px;
+            .list_bottom {
+              span:first-of-type {
+                margin-right: 30px;
+              }
+            }
+          }
+        }
+      }
+      .tabs {
+        margin-bottom: 40px;
+        .tab {
+          border-radius: 4px;
+          padding: 10px 30px;
+          font-size: 24px;
+          margin-right: 150px;
+        }
+        .active {
+          font-size: 24px;
+        }
+        .deriveBtn {
+          padding: 12px 30px;
+          font-size: 24px;
+        }
+      }
+      .infinite-list-wrapper {
+        /depp/ .el-table tr:last-of-type td {
+          padding: 8px 0;
+        }
+        /deep/ .el-table th>.cell {
+          font-size: 20px;
+        }
+        /deep/ .el-table .cell {
+          font-size: 20px;
+        }
+        /deep/ .el-button--mini span {
+          font-size: 20px;
+        }
+        /deep/ .el-table--enable-row-transition .el-table__body td:first-of-type .cell {
+          padding-left: 14px;
+        }
+        /deep/ td:last-of-type .el-button--mini {
+          height: 45px;
+          padding: 0 26px;
+        }
+        /deep/ .el-table th.is-leaf {
+          padding: 20px 0;
+        }
+        /deep/ .el-table--enable-row-transition .el-table__body td {
+          padding: 20px 0;
+        }
+        p {
+          font-size: 20px;
+          padding: 30px 0 0;
         }
       }
     }
@@ -1399,6 +1608,45 @@
       }
     }
   }
+
+  .detailTipDevice {
+    .detail_content {
+      .info_content {
+        .close {
+          top: -76px;
+          img {
+            width: 40px;
+          }
+        }
+        .detail_info_content {
+          .detail_info {
+            padding: 20px 50px;
+            .info_title {
+              padding: 15px 48px;
+              font-size: 24px;
+            }
+            .lists {
+              width: 30vw;
+              padding-top: 0;
+              .list {
+                padding: 30px 0;
+                .info_name {
+                  font-size: 20px;
+                }
+                .info_value {
+                  font-size: 20px;
+                }
+              }
+            }
+          }
+          .detail_info:last-of-type {
+            margin-top: 0;
+          }
+        }
+      }
+    }
+  }
+
   .sureTip {
     .shadow {
       background: rgba(0,0,0,0.7);
@@ -1443,7 +1691,7 @@
           top: 0;
         }
         .tip_lists {
-          width: 32vw;
+          width: 36vw;
           padding-top: 0;
           .input {
             border-bottom: 2px solid #979797;
@@ -1642,6 +1890,84 @@
       }
     }
   }
+
+  .sureTipDevice {
+    .rescind_info {
+      .info_content {
+        position: relative;
+        padding: 30px 50px 20px;
+        .close {
+          top: -76px;
+          img {
+            width: 40px;
+          }
+        }
+        .title {
+          padding: 15px 56px;
+          font-size: 26px;
+        }
+        .tip_lists {
+          width: 25vw;
+          .input {
+            border-bottom: 1px solid #eee;
+            input {
+              width: 80px;
+              font-size: 40px;
+            }
+            span {
+              font-size: 30px;
+              margin-right: 2px;
+            }
+          }
+          .keyBords {
+            padding-top: 32px;
+            span {
+              height: 76px;
+              line-height: 76px;
+              font-size: 40px;
+              margin: 0 1.1vw 1vw 0;
+              font-weight: bold;
+              img {
+                width: 52px;
+              }
+            }
+            span:nth-of-type(10) {
+              span {
+                font-weight: normal;
+                font-size: 30px;
+              }
+            }
+          }
+        }
+        .btn {
+          bottom: -138px;
+          padding: 30px 0;
+          font-size: 28px;
+        }
+      }
+    }
+  }
+  .sureTipDevice_ {
+    .rescind_info {
+      .info_content {
+        .tip_lists {
+          .input {
+            input {
+              width: 40px;
+            }
+          }
+          .keyBords {
+            span:nth-of-type(10) {
+              span {
+                font-size: 30px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   .quit {
     .shadow {
       position: fixed;

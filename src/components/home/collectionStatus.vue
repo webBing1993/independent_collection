@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'collectionStatus collectionStatus_' : 'collectionStatus'">
+    <div :class="isDevice ? 'collectionStatus collectionStatus_' : 'collectionStatus'">
       <div class="collection_title">
         <img src="../../assets/ic_chevron_left.png" alt="" @click="goBack">
         <span class="quitBtn" @click="quit = true;" v-if="!isDevice && !isPad">退出</span>
@@ -40,8 +40,9 @@
 
     <!-- 正在查询-->
     <div :class="isPad ? 'toastTip toastTip_' : 'toastTip'" v-if="toastTip">
+      <div class="close" @click="closeToast"><img src="../../assets/ic-back-white_.png" alt=""></div>
       <img src="../../assets/ic-reach.png" alt="">
-      <p>正在查询支付状态...</p>
+      <p>正在查询支付状态 <span>{{timeVal}}s</span></p>
     </div>
 
     <loadingList v-if="loadingShow" :loadingText="loadingText" style="width: calc(100vw)"></loadingList>
@@ -58,6 +59,10 @@
     data () {
       return {
         toastTip: false,   // toast
+        timeVal: 120,
+        timer: null,
+        timer_: null,
+        num: 0,
         loadingShow: false,  // loading
         loadingText: '加载中...',    // loading 语
         payType: sessionStorage.getItem('payType') ? sessionStorage.getItem('payType') :1,   // 1表示收款 2表示预授权收款
@@ -76,6 +81,8 @@
             nativePay: true,
           }
         },  // 是否支持微信和支付宝收款、预授权
+        payNum: 0,
+        timeVal_: '',
       }
     },
     methods: {
@@ -85,7 +92,16 @@
 
       // 返回上一页
       goBack() {
-        this.goto(-1);
+        sessionStorage.removeItem('moneyVal');
+        clearTimeout(this.timer);
+        clearTimeout(this.timer_);
+        let that = this;
+        window.parent.sonPageClick(0);
+        window.removeEventListener('message', that.eventMessage);
+        let timer = setTimeout(() => {
+          clearTimeout(timer);
+          this.goto(-1);
+        }, 100)
       },
 
       // 退出事件
@@ -103,6 +119,7 @@
 
       // 通过付款成功和失败进行跳转
       collectionResult(status, orderId, deviceId) {
+          console.log('this.moneyVal', this.moneyVal);
         if (status == 0) {
           // 发起普通支付请求
           this.codeAuth({
@@ -114,28 +131,33 @@
               payChannel: this.payChannel
             },
             onsuccess: body => {
+              clearTimeout(this.timer);
               if (body.data.code == 0 || body.data.errcode == 0) {
                 this.orderReasult(body.data.data.flowId);
               }else {
                 this.toastTip = false;
-                if (this.isDevice) {
-                  // 双屏设备
-                  setTimeout(() => {
-                    jsObj.OpenBarCode();
-                  }, 3000);
-                }
+                this.timeVal = 120;
+                setTimeout(() => {
+                  jsObj.OpenBarCode();
+                }, 1000);
+                this.num = 0;
+                clearTimeout(this.timer_);
               }
             },
             onfail: body => {
-              this.toastTip = false;
+
             },
             onerror: body => {
-              this.toastTip = false;
+              this.closeToast();
             }
           })
         }else {
+          clearTimeout(this.timer);
+          clearTimeout(this.timer_);
           // 失败
-          this.replaceto('/collectionFail');
+          this.$nextTick(() => {
+            this.replaceto('/collectionFail');
+          });
         }
       },
 
@@ -149,44 +171,62 @@
               // 成功
               if (body.data.data.result == 'SUCCESS') {
                 this.toastTip = false;
+                clearTimeout(this.timer);
+                clearTimeout(this.timer_);
                 sessionStorage.setItem('collectionSuccessList', JSON.stringify(body.data.data.data));
-                this.replaceto('/collectionSuccess');
+                this.$nextTick(() => {
+                  this.replaceto('/collectionSuccess');
+                })
               }else if (body.data.data.result == 'INIT' || body.data.data.result == 'PAYING') {
-                let num = 0;
-                if (num >= 65) {
+                if (this.num >= 125) {
                   // 失败
+                  this.toastTip = false;
+                  clearTimeout(this.timer);
+                  clearTimeout(this.timer_);
                   sessionStorage.setItem('codeResult', body.data.data.desc);
-                  this.replaceto('/collectionFail');
+                  this.$nextTick(() => {
+                    this.replaceto('/collectionFail');
+                  });
                   return;
+                }else {
+                  this.timer = setTimeout(() => {
+                    this.num++;
+                    this.orderReasult(orderId);
+                  },1000)
                 }
-                setTimeout(() => {
-                  num++;
-                  this.orderReasult(orderId);
-                },1000)
               }else {
                 this.toastTip = false;
+                clearTimeout(this.timer);
+                clearTimeout(this.timer_);
                 // 失败
                 sessionStorage.setItem('codeResult', body.data.data.desc);
-                this.replaceto('/collectionFail');
+                this.$nextTick(() => {
+                  this.replaceto('/collectionFail');
+                })
               }
             }else {
               this.toastTip = false;
+              clearTimeout(this.timer);
+              clearTimeout(this.timer_);
               // 失败
               sessionStorage.setItem('codeResult', body.data.errmsg || body.data.msg);
-              this.replaceto('/collectionFail');
+              this.$nextTick(() => {
+                this.replaceto('/collectionFail');
+              })
             }
           },
           onfail: body => {
             this.toastTip = false;
+            clearTimeout(this.timer);
+            clearTimeout(this.timer_);
             // 失败
             sessionStorage.setItem('codeResult', body.data.errmsg || body.data.msg);
-            this.replaceto('/collectionFail');
+            this.$nextTick(() => {
+              this.replaceto('/collectionFail');
+            })
           },
           onerror: body => {
-            this.toastTip = false;
-            if (this.isDevice) {
-              jsObj.CloseBarCode();
-            }
+            this.closeToast();
           }
         })
       },
@@ -195,7 +235,6 @@
       getCode(str, deviceId) {
         console.log("str", str);
         console.log("deviceId", deviceId);
-        this.toastTip = true;
         let reg = /^\d+(\.\d+)?$/; //非负浮点数
         if (reg.test(str)) {
           // 表示是数字型
@@ -204,6 +243,8 @@
           if ((str.length == 18 && (parseInt(strTwo) >= 10) && parseInt(strTwo) <= 15)) {
             // 为微信的授权码
             if ((this.payType == 2 && this.support.weixinPay.depositPay) || (this.payType == 1 && this.support.weixinPay.nativePay)) {
+              this.toastTip = true;
+              this.timeTimer();
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -212,9 +253,12 @@
                 toastTxt_: '不支持此类型二维码',
               });
             }
-          }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
+            return;
+          }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 30))) {
             //  为支付宝的授权码
             if ((this.payType == 2 && this.support.aliPay.depositPay) || (this.payType == 1 && this.support.aliPay.nativePay)) {
+              this.toastTip = true;
+              this.timeTimer();
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -223,45 +267,88 @@
                 toastTxt_: '不支持此类型二维码',
               });
             }
+            return;
           }else {
             this.toastTip = false;
+            clearTimeout(this.timer);
+            clearTimeout(this.timer_);
             sessionStorage.setItem('codeResult', '二维码不合法');
             this.collectionResult(1);
           }
         }else {
           this.toastTip = false;
+          clearTimeout(this.timer);
+          clearTimeout(this.timer_);
           sessionStorage.setItem('codeResult', '二维码不合法');
           this.collectionResult(1);
         }
       },
 
-    },
-    mounted () {
-      setTimeout(() => {
-//          this.replaceto('/collectionSuccess');
-      },50);
-      // Android调取摄像头
-      if (this.isPad) {
-        window.getBack = this.goBack;
-      }else if (this.isDevice) {
-        // 双屏设备
-        jsObj.OpenBarCode();
-      }
+      // 倒计时
+      timeTimer() {
+        if (this.timeVal == 0) {
+          this.closeToast();
+        }else {
+          this.timeVal--;
+          this.timer_ = setTimeout(() => {
+            this.timeTimer();
+          },1000);
+        }
 
-      this.support = sessionStorage.getItem('support') ? JSON.parse(sessionStorage.getItem('support')) : {};
+      },
 
-      // 接受父页面发来的信息
-      window.addEventListener('message', (event) => {
+      // 关闭toast
+      closeToast () {
+        this.toastTip = false;
+        this.timeVal = 120;
+        this.num = 0;
+        this.payNum = 0;
+        clearTimeout(this.timer);
+        clearTimeout(this.timer_);
+        let that = this;
+        this.timeVal_ = new Date().getTime();
+        jsObj.OpenBarCode(this.timeVal_.toString());
+        window.parent.sonPageClick(0);
+        window.removeEventListener('message', that.eventMessage);
+        let timer = setTimeout(() => {
+          window.parent.sonPageClick(1);
+          console.log(11111);
+          this.payNum++;
+          window.addEventListener('message', that.eventMessage);
+          clearTimeout(timer);
+        }, 200)
+      },
+
+      eventMessage(event) {
         let data = event.data;
         console.log(data)
         switch (data.cmd) {
           case 'getParams':
             console.log('data.params.key', data.params.key);
             console.log('data.params.deviceId', data.params.deviceId);
-            jsObj.CloseBarCode();
-            this.getCode(data.params.key, data.params.deviceId)
+            console.log('data.params.timeVal', data.params.timeVal);
+            let that = this;
+            window.parent.sonPageClick(0);
+            window.removeEventListener('message', that.eventMessage);
+            console.log('this.payNum', this.payNum);
+            if (this.payNum == 1 && this.timeVal_ == data.params.timeVal) {
+              this.getCode(data.params.key, data.params.deviceId);
+            }
         }
-      })
+      },
+    },
+    beforeMount () {
+      this.support = sessionStorage.getItem('support') ? JSON.parse(sessionStorage.getItem('support')) : {};
+    },
+    mounted () {
+      this.payNum = 0;
+      this.closeToast();
+    },
+    destroyed() {
+        console.log('销毁了');
+      let that = this;
+      window.parent.sonPageClick(0);
+      window.removeEventListener('message', that.eventMessage);
     },
 
   }
@@ -284,7 +371,6 @@
       img {
         display: inline-block;
         width: 3.8vw;
-        height: 3.8vw;
       }
       span {
         position: absolute;
@@ -385,62 +471,61 @@
 
   .collectionStatus_ {
     .collection_title {
-      padding: 8px 15px;
-      span {
-        font-size: 14px;
+      padding: 20px 60px;
+      width: calc(100vw - 120px);
+      img {
+        width: 34px;
       }
     }
     .collection_content {
-      width: 87vw;
-      padding: 0 6.5vw 0;
       .collection_fl {
-        width: 45%;
+        width: 32%;
       }
       .collection_fr {
-        margin-left: 3.1vw;
-        width: 45%;
+        margin-left: 64px;
         .collection_money {
           span:first-of-type {
-            font-size: 14px;
+            font-size: 26px;
           }
           span:nth-of-type(2) {
-            margin: 0 .22rem 0 .38rem;
-            font-size: 15px;
+            margin: 0 24px 0 15px;
+            font-size: 30px;
             span {
-              font-size: 16px;
+              font-size: 62px;
             }
           }
         }
         .tips {
-          margin-top: 20px;
+          margin-top: 120px;
           .tip {
-            width: 100%;
-            margin-bottom: 10px;
+            width: 420px;
+            margin-bottom: 20px;
             span {
-              height: 48px;
-              line-height: 48px;
-              font-size: 14px;
+              height: 78px;
+              line-height: 78px;
+              font-size: 30px;
+              color: #171A28;
             }
             img {
-              width: 30px;
-              height: 36px;
+              width: 40px;
+              height: 48px;
             }
           }
         }
         .tig {
-          margin-top: 22px;
+          margin-top: 80px;
           span {
-            font-size: 14px;
+            font-size: 20px;
           }
           img {
-            width: 20px;
-            margin-left: 12px;
+            width: 30px;
+            margin-left: 30px;
           }
           img:last-of-type {
-            margin-right: 12px;
+            margin-right: 30px;
           }
           img:only-of-type {
-            margin: 0 12px;
+            margin: 0 30px;
           }
         }
       }
@@ -467,6 +552,16 @@
     p {
       color: #fff;
       font-size: .56rem;
+    }
+    .close {
+      position: absolute;
+      right: 0;
+      top: -1.38rem;
+      img {
+        display: block;
+        width: .72rem;
+        margin: 0;
+      }
     }
   }
 

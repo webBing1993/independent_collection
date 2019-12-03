@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'collectionSuccess_ collectionSuccess' : 'collectionSuccess'" v-show="collectionSuccess">
+    <div :class="isPad ? 'collectionSuccess_ collectionSuccess' : isDevice ? 'collectionSuccess collectionSuccessDevice' : 'collectionSuccess'" v-show="collectionSuccess">
       <div class="collection_title">
         <span>{{payType == 1 ? '收款' : '预授权收款'}}</span>
       </div>
@@ -24,10 +24,6 @@
               <div class="list">
                 <div class="name">交易状态</div>
                 <div class="content">{{detail.trade_status == 'SUCCESS' ? '已完成' : '未完成'}}</div>
-              </div>
-              <div class="list">
-                <div class="name">支付方式</div>
-                <div class="content">{{detail.pay_channel}}</div>
               </div>
               <div class="list">
                 <div class="name">交易类型</div>
@@ -67,7 +63,7 @@
       </div>
     </div>
     <!-- 输入房号弹框-->
-    <div :class="isPad ? 'sureTip_ sureTip' : 'sureTip'" v-if="roomNoTip">
+    <div :class="isPad ? 'sureTip_ sureTip' : isDevice ? 'sureTip sureTipDevice' : 'sureTip'" v-if="roomNoTip">
       <div class="shadow"></div>
       <div class="rescind_info">
         <div class="info_content">
@@ -186,6 +182,8 @@
         this.$nextTick(() => {
           if (this.isPad) {
             this.$refs.trandeWidth.style.width = (32 + len * 12) + 'px';
+          }else if (this.isDevice) {
+            this.$refs.trandeWidth.style.width = (40 + len * 15) + 'px';
           }else {
             this.$refs.trandeWidth.style.width = (24 + len * 27) + 'px';
           }
@@ -276,6 +274,8 @@
       if (this.isPad) {
         window.getBack = this.goBack;
       }
+    },
+    beforeMount () {
       // 权限
       let arr = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
       arr.forEach(item => {
@@ -449,7 +449,7 @@
       font-size: 18px;
     }
     .collection_content {
-      padding: 110px 10vw 0;
+      padding: 110px 14vw 0;
       .success_fl {
         width: 40%;
         .success_content {
@@ -526,6 +526,87 @@
       }
     }
   }
+  .collectionSuccessDevice {
+    .collection_title {
+      padding: 20px 60px;
+      font-size: 26px;
+      width: calc(100vw -120px);
+    }
+    .collection_content {
+      padding: 11vw 15vw 0;
+      .success_fl {
+        width: 38%;
+        .success_content {
+          width: 100%;
+          .success_title {
+            padding: 0 80px;
+            height: 68px;
+            line-height: 68px;
+            font-size: 28px;
+          }
+          .lists {
+            padding: 50px 62px;
+            .list {
+              padding: 32px 0;
+              .name {
+                font-size: 24px;
+              }
+              .content {
+                font-size: 24px;
+              }
+            }
+          }
+        }
+      }
+      .success_fr {
+        width: 40%;
+        margin-top: -34px;
+        .title {
+          padding-bottom: 20px;
+          img {
+            width: 78px;
+            margin-right: 30px;
+          }
+          span {
+            color: #666;
+            font-size: 36px;
+          }
+        }
+        .collection_carousel {
+          padding-top: 20px;
+          img {
+            width: 86px;
+            margin: 0 auto 10px;
+          }
+          span {
+            font-size: 20px;
+          }
+          .collection_remark {
+            padding: 0 18px;
+            display: block;
+            margin-top: 20px;
+            div {
+              input {
+                font-size: 24px;
+                padding: 30px 0;
+              }
+            }
+          }
+        }
+        .btn {
+          margin-top: 96px;
+          span {
+            width: 48%;
+            border-radius: 40px;
+            height: 80px;
+            line-height: 80px;
+            font-size: 24px;
+          }
+        }
+      }
+    }
+  }
+
   .sureTip {
     .shadow {
       background: rgba(0,0,0,0.7);
@@ -742,6 +823,63 @@
           padding: 12px 0;
           font-size: 16px;
           letter-spacing: 4px;
+        }
+      }
+    }
+  }
+
+  .sureTipDevice {
+    .rescind_info {
+      .info_content {
+        position: relative;
+        padding: 20px 50px;
+        .close {
+          top: -76px;
+          img {
+            width: 40px;
+          }
+        }
+        .title {
+          padding: 15px 56px;
+          font-size: 26px;
+        }
+        .tip_lists {
+          width: 25vw;
+          .input {
+            border-bottom: 1px solid #eee;
+            input {
+              width: 40px;
+              font-size: 40px;
+            }
+            span {
+              font-size: 30px;
+              margin-right: 2px;
+            }
+          }
+          .keyBords {
+            padding-top: 32px;
+            span {
+              height: 76px;
+              line-height: 76px;
+              font-size: 40px;
+              margin: 0 1.1vw 1vw 0;
+              font-weight: bold;
+              img {
+                width: 52px;
+              }
+            }
+            span:nth-of-type(10) {
+              span {
+                font-weight: normal;
+                font-size: 30px;
+              }
+            }
+          }
+        }
+        .btn {
+          bottom: -138px;
+          padding: 30px 0;
+          font-size: 28px;
         }
       }
     }

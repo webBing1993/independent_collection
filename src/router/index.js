@@ -17,7 +17,7 @@ const router = new Router({
       component: resolve => require(['../components/home/makeCollections.vue'],resolve),
     },
     {
-      path: '/collectionStatus',
+      path: '/collectionStatus/:id',
       name: 'collectionStatus',
       component: resolve => require(['../components/home/collectionStatus.vue'],resolve),
     },

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'collectionFail_ collectionFail' : 'collectionFail'" v-show="collectionFail">
+    <div :class="isPad ? 'collectionFail_ collectionFail' : isDevice ? 'collectionFail collectionFailDevice' : 'collectionFail'" v-show="collectionFail">
       <div class="collection_title">
         <span>{{payType == 1 ? '收款' : '预授权收款'}}</span>
       </div>
@@ -31,8 +31,9 @@
         loadingText: '加载中...',    // loading 语
         collectionFail: false,   // 模板的显示和隐藏
         payType: sessionStorage.getItem('payType') ? sessionStorage.getItem('payType') : 1,   // 1表示收款 2表示预授权收款
-        reason: sessionStorage.getItem('codeResult') ? sessionStorage.getItem('codeResult') : '支付超时了', // 支付失败的原因
+        reason: sessionStorage.getItem('codeResult') ? sessionStorage.getItem('codeResult') != 'null' ? sessionStorage.getItem('codeResult').split(':')[1] : '支付超时了' : '支付超时了', // 支付失败的原因
         isPad: sessionStorage.getItem('isPad') == 'true' ? true : false,  // 判断是否是移动iPad
+        isDevice: sessionStorage.getItem('isDevice') == 'true' ? true : false,  // 判断是否是双屏设备
       }
     },
     methods: {
@@ -41,7 +42,8 @@
       ]),
 
       goBack () {
-        this.goto(-1);
+//        this.replaceto('/makeCollections');
+        this.goto(-1)
       }
 
     },
@@ -152,6 +154,42 @@
           padding: 8px 0;
           font-size: 14px;
           letter-spacing: 4px;
+        }
+      }
+    }
+  }
+
+  .collectionFailDevice {
+    .collection_title {
+      padding: 20px 60px;
+      font-size: 26px;
+      width: calc(100vw -120px);
+    }
+    .collection_content {
+      .fail_content {
+        .fail_icon {
+          margin-right: 40px;
+          img {
+            width: 100px;
+          }
+        }
+        .fail_reason {
+          text-align: left;
+          .title {
+            font-size: 44px;
+            margin-bottom: 26px;
+          }
+          .reason {
+            font-size: 30px;
+          }
+        }
+      }
+      .btns {
+        margin-top: 200px;
+        span {
+          width: 450px;
+          padding: 20px 0;
+          font-size: 26px;
         }
       }
     }

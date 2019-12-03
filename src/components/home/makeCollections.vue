@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'makeCollections makeCollections_' : 'makeCollections'" v-show="showMakeCollections">
+    <div :class="isPad ? 'makeCollections makeCollections_' : isDevice ? 'makeCollections makeCollectionsDevice' : 'makeCollections'" v-show="showMakeCollections">
       <div class="collection_title">
         <img src="../../assets/ic_chevron_left.png" alt="" @click="goBack">
         <span class="quitBtn" @click="quit = true;" v-if="!isDevice && !isPad">退出</span>
@@ -26,13 +26,13 @@
             </div>
           </div>
           <div class="collectionContent_fr">
-            <!-- 发起收款btn-->
-            <div class="btn" @click="makeCollection(1)" v-if="configList.depositAuth && (support.aliPay.nativePay || support.weixinPay.nativePay)"><img src="../../assets/btn1.png" alt=""></div>
-            <!-- 发起预授权btn-->
-            <div class="btn" @click="makeCollection(2)" v-if="configList.depositNative && (support.weixinPay.depositPay || support.aliPay.depositPay)"><img src="../../assets/btn2.png" alt=""></div>
+            <!-- 发起收款btn--> <!-- v-if="configList.depositAuth && (support.aliPay.nativePay || support.weixinPay.nativePay)"-->
+            <div class="btn" @click="makeCollection(1)"><img src="../../assets/btn1.png" alt=""></div>
+            <!-- 发起预授权btn--> <!--  v-if="configList.depositNative && (support.weixinPay.depositPay || support.aliPay.depositPay)"-->
+            <div class="btn" @click="makeCollection(2)"><img src="../../assets/btn2.png" alt=""></div>
             <div class="tig">
               <span>支持</span>
-              <img src="../../assets/ic-wx.png" alt="" v-if="support.weixinPay.depositPay || support.weixinPay.nativePay">
+              <img src="../../assets/ic-wx.png" v-if="support.weixinPay.depositPay || support.weixinPay.nativePay" alt="">
               <img src="../../assets/ic-zfb.png" alt="" v-if="support.aliPay.depositPay || support.aliPay.nativePay">
               <span>付款方式</span>
             </div>
@@ -54,8 +54,9 @@
 
     <!-- 正在查询-->
     <div :class="isPad ? 'toastTip toastTip_' : 'toastTip'" v-if="toastTip">
+      <div class="close" @click="closeToast"><img src="../../assets/ic-back-white_.png" alt=""></div>
       <img src="../../assets/ic-reach.png" alt="">
-      <p>正在查询支付状态</p>
+      <p>正在查询支付状态 <span>{{timeVal}}s</span></p>
     </div>
 
     <loadingList v-if="loadingShow" :loadingText="loadingText" style="width: calc(100vw)"></loadingList>
@@ -86,6 +87,10 @@
         payType: 1, // 1 收款 2 预授权
         payChannel: '',   // 判断是支付宝还是微信支付
         toastTip: false,
+        timeVal: 120,
+        timer: null,
+        timer_: null,
+        num: 0,
         configList: {
           depositAuth: false,   // 收款
           depositNative: false,  // 预授权
@@ -109,6 +114,7 @@
 
       // 返回上一页
       goBack() {
+        clearTimeout(this.timer);
         this.goto(-1);
       },
 
@@ -126,18 +132,51 @@
         }
         if (this.isPad) {
           this.$refs.numberWidth.style.width = (46 + len * 13) + 'px';
+        }else if (this.isDevice) {
+          this.$refs.numberWidth.style.width = (80 + len * 12) + 'px';
         }else {
-          this.$refs.numberWidth.style.width = (30 + len * 24) + 'px';
+          this.$refs.numberWidth.style.width = (30 + len * 25) + 'px';
         }
       },
 
       // 键盘事件
       keyEntry(event, item) {
         event.preventDefault();
-        if (!/^\d+$/.test(parseFloat(this.moneyVal) * 10) && this.moneyVal != '' && this.moneyVal.length != 0) {
-          return;
-        }else {
+        let reg = /^[+]{0,1}(\d+)$|^[+]{0,1}(\d+\.\d+)$/;
+        if ((this.moneyVal != '' && /^\d+$/.test(parseFloat(this.moneyVal) * 10)) || this.moneyVal == '') {
           this.moneyVal+=item;
+          let arr = [];
+          if (this.moneyVal.indexOf('.') > 0) {
+              arr = this.moneyVal.split('.');
+          }
+          if (this.moneyVal.length == 2 && this.moneyVal.slice(0, 1) == 0 && item != '.') {
+            this.keyCancel(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的收款金额',
+            });
+          }else if (reg.test(this.moneyVal) || arr.length == 2) {
+            if (((this.moneyVal) * 100 == 0 && this.moneyVal.length >= 4) || (this.moneyVal.indexOf('.') > 0 && parseFloat(this.moneyVal.split('.')[0]) == 0 && this.moneyVal.split('.')[0].length > 1) || this.moneyVal.indexOf('.') > 0 && this.moneyVal.split('.')[1].length > 2) {
+              this.keyCancel(event);
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '请输入正确的收款金额',
+              });
+            }else {
+
+            }
+          }else {
+            this.keyCancel(event);
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '请输入正确的收款金额',
+            });
+          }
+        }else {
+          this.$toastMsg({
+            toastTip: true,
+            toastTxt_: '请输入正确的收款金额',
+          });
         }
         this.changeInput(this.moneyVal);
       },
@@ -151,6 +190,7 @@
 
       // 跳转
       makeCollection (type) {
+        sessionStorage.removeItem('moneyVal');
         // type 1表示收款 2表示预授权
         if (this.moneyVal.length == 0) {
           this.$toastMsg({
@@ -163,13 +203,13 @@
             toastTxt_: '请输入正确的收款金额',
           });
         }else {
-          sessionStorage.setItem('moneyVal', this.moneyVal);
+          sessionStorage.setItem('moneyVal', parseFloat(this.moneyVal));
           sessionStorage.setItem('payType', type);
           this.payType = type;
           if (this.isPad) {
             window.android.scanQrCode();
           }else {
-            this.goto('/collectionStatus');
+            this.goto('/collectionStatus/'+new Date().getTime());
           }
         }
       },
@@ -224,18 +264,15 @@
                 this.orderReasult(body.data.data.flowId);
               }else {
                 this.toastTip = false;
-                if (this.isDevice) {
-                  // 双屏设备
-                  setTimeout(() => {
-                    jsObj.OpenBarCode();
-                  }, 3000);
-                }
+                clearTimeout(this.timer);
               }
             },
             onfail: body => {
+              clearTimeout(this.timer);
               this.toastTip = false;
             },
             onerror: body => {
+              clearTimeout(this.timer);
               this.toastTip = false;
             }
           })
@@ -255,28 +292,32 @@
               // 成功
               if (body.data.data.result == 'SUCCESS') {
                 this.toastTip = false;
+                clearTimeout(this.timer);
                 sessionStorage.setItem('collectionSuccessList', JSON.stringify(body.data.data.data));
                 this.replaceto('/collectionSuccess');
               }else if (body.data.data.result == 'INIT' || body.data.data.result == 'PAYING') {
-                let num = 0;
-                if (num >= 65) {
+                if (this.num >= 65) {
+                  this.num = 0;
                   // 失败
                   sessionStorage.setItem('codeResult', body.data.data.desc);
                   this.goto('/collectionFail');
                   return;
+                }else {
+                  this.timer = setTimeout(() => {
+                    this.num++;
+                    this.orderReasult(orderId);
+                  },1000)
                 }
-                setTimeout(() => {
-                  num++;
-                  this.orderReasult(orderId);
-                },1000)
               }else {
                 this.toastTip = false;
+                clearTimeout(this.timer);
                 // 失败
                 sessionStorage.setItem('codeResult', body.data.data.desc);
                 this.goto('/collectionFail');
               }
             }else {
               this.toastTip = false;
+              clearTimeout(this.timer);
               // 失败
               sessionStorage.setItem('codeResult', body.data.errmsg || body.data.msg);
               this.goto('/collectionFail');
@@ -284,12 +325,14 @@
           },
           onfail: body => {
             this.toastTip = false;
+            clearTimeout(this.timer);
             // 失败
             sessionStorage.setItem('codeResult', body.data.errmsg || body.data.msg);
             this.goto('/collectionFail');
           },
           onerror: body => {
             this.toastTip = false;
+            clearTimeout(this.timer);
             if (this.isDevice) {
               jsObj.CloseBarCode();
             }
@@ -310,6 +353,7 @@
             // 为微信的授权码
             if ((this.payType == 2 && this.support.weixinPay.depositPay) || (this.payType == 1 && this.support.weixinPay.nativePay)) {
               this.toastTip = true;
+              this.timeTimer();
               this.payChannel = 'WEIXINPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -318,10 +362,11 @@
                 toastTxt_: '不支持此类型二维码',
               });
             }
-          }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 24))) {
+          }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 30))) {
             //  为支付宝的授权码
             if ((this.payType == 2 && this.support.aliPay.depositPay) || (this.payType == 1 && this.support.aliPay.nativePay)) {
               this.toastTip = true;
+              this.timeTimer();
               this.payChannel = 'ALIPAY';
               this.collectionResult(0, str, deviceId);
             }else {
@@ -331,27 +376,37 @@
               });
             }
           }else {
-            this.toastTip = false;
             sessionStorage.setItem('codeResult', '二维码不合法');
             this.collectionResult(1);
           }
         }else {
-          this.toastTip = false;
           sessionStorage.setItem('codeResult', '二维码不合法');
           this.collectionResult(1);
         }
       },
 
+      // 倒计时
+      timeTimer() {
+        if (this.timeVal == 0) {
+          this.closeToast();
+        }
+        this.timeVal--;
+        this.timer_ = setTimeout(() => {
+          this.timeTimer();
+        },1000);
+      },
+
+      // 关闭toast
+      closeToast () {
+        this.toastTip = false;
+        this.timeVal = 120;
+        this.num = 0;
+        clearTimeout(this.timer);
+        clearTimeout(this.timer_);
+      },
+
     },
-    mounted () {
-      this.showMakeCollections = false;
-      this.getSupport();
-
-      if (this.isPad) {
-        window.getSweepIpadOrderId = this.getCode;
-        window.getBack = this.goBack;
-      }
-
+    beforeMount() {
       // 权限
       let arr = sessionStorage.getItem('configList') ? JSON.parse(sessionStorage.getItem('configList')) : [];
       arr.forEach(item => {
@@ -362,6 +417,15 @@
           this.configList.depositNative = true;
         }
       });
+    },
+    mounted () {
+      this.showMakeCollections = false;
+      this.getSupport();
+
+      if (this.isPad) {
+        window.getSweepIpadOrderId = this.getCode;
+        window.getBack = this.goBack;
+      }
     },
 
   }
@@ -384,7 +448,6 @@
       img {
         display: inline-block;
         width: 3.8vw;
-        height: 3.8vw;
       }
       span {
         position: absolute;
@@ -432,7 +495,7 @@
         .collectionContent_fl {
           width: 48%;
           .input {
-            border-bottom: 2px solid #979797;
+            border-bottom: 1px solid #eee;
             padding: 1.2vw .1rem;
             text-align: right;
             width: calc(100% - .2rem);
@@ -452,8 +515,20 @@
             input[type="number"]{
               -moz-appearance: textfield;
             }
+            input:-moz-placeholder {
+              color: #CACACA;
+            }
+            input:-ms-input-placeholder {
+              color: #CACACA;
+            }
+            input::-moz-placeholder {
+              color: #CACACA;
+            }
+            input::-webkit-input-placeholder {
+              color: #CACACA;
+            }
             span {
-              color: #888888;
+              color: #CACACA;
               font-size: .54rem;
               margin-right: .1rem;
             }
@@ -581,7 +656,7 @@
           .input {
             padding: 5px 3px;
             width: calc(100% - .2rem);
-            border-bottom: 1px solid #e4e4e4;
+            border-bottom: 1px solid #eee;
             input {
               width: 46px;
               font-size: 34px;
@@ -633,6 +708,87 @@
       }
     }
   }
+  .makeCollectionsDevice {
+    .collection_title {
+      padding: 20px 60px;
+      width: calc(100vw - 120px);
+      img {
+        width: 34px;
+      }
+    }
+    .depositTip {
+      width: calc(100vw - 60px);
+      padding: 20px 30px;
+      top: 74px;
+      span {
+        font-size: 24px;
+      }
+      img {
+        width: 16px;
+      }
+    }
+    .collection_content {
+      transform: translate(-50%, -48%);
+      .collectionContent {
+        .collectionContent_fl {
+          .input {
+            padding: 20px 5px;
+            width: calc(100% - 10px);
+            input {
+              width: 80px;
+              font-size: 40px;
+            }
+            span {
+              font-size: 30px;
+              margin-right: 2px;
+            }
+          }
+          .keyBords {
+            padding-top: 32px;
+            span {
+              height: 100px;
+              line-height: 100px;
+              font-size: 44px;
+              font-weight: bold;
+              img {
+                width: .97rem;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+              }
+            }
+          }
+        }
+        .collectionContent_fr {
+          width: 38%;
+          .btn {
+            margin-bottom: 36px;
+          }
+          .tig {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 100px;
+            span {
+              font-size: 20px;
+            }
+            img {
+              width: 30px;
+              margin-left: 30px;
+            }
+            img:last-of-type {
+              margin-right: 30px;
+            }
+            img:only-of-type {
+              margin: 0 30px;
+            }
+          }
+        }
+      }
+    }
+  }
+
   .quit {
     .shadow {
       position: fixed;
@@ -731,6 +887,16 @@
       color: #fff;
       font-size: .56rem;
     }
+    .close {
+      position: absolute;
+      right: 0;
+      top: -1.38rem;
+      img {
+        display: block;
+        width: .72rem;
+        margin: 0;
+      }
+    }
   }
 
   .toastTip_ {
@@ -744,6 +910,13 @@
     p {
       font-size: 18px;
       font-family: 'SourceHanSansCN-Medium';
+    }
+    .close {
+      top: -30px;
+      img {
+        width: 20px;
+        margin: 0;
+      }
     }
   }
 

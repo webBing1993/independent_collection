@@ -1,15 +1,15 @@
 <template>
   <div>
-    <div :class="isIpad ? 'homeIndex_ homeIndex' : 'homeIndex'" v-show="showIndex">
+    <div :class="isIpad ? 'homeIndex_ homeIndex' : isDevice ? 'homeIndex homeDevice' : 'homeIndex '" v-show="showIndex">
       <div class="index_title">
         <img src="../../assets/ic_chevron_left.png" alt="" @click="quitBack" v-if="!isDevice">
         <span>欢迎使用移动收银</span>
       </div>
       <div class="index_content">
         <div class="imgLists">
-          <div class="list" @click="goMakeCollections" v-if="configList_.tradeREceipt"><img src="../../assets/index_1.png" alt=""></div>
-          <div class="list" @click="goto('/preLicensing')" v-if="configList_.trandeDeposit"><img src="../../assets/index_2.png" alt=""></div>
-          <div class="list" @click="goto('/transactionQuery')" v-if="configList_.trandeRecord"><img src="../../assets/index_3.png" alt=""></div>
+          <div class="list" @click="goMakeCollections(0)"><img src="../../assets/index_1.png" alt=""></div>
+          <div class="list" @click="goMakeCollections(1)"><img src="../../assets/index_2.png" alt=""></div>
+          <div class="list" @click="goMakeCollections(2)"><img src="../../assets/index_3.png" alt=""></div>
         </div>
       </div>
     </div>
@@ -48,14 +48,41 @@
       },
 
       // 在线收款预授权
-      goMakeCollections () {
-        if (this.isIpad || this.isDevice) {
-          this.goto('/makeCollections');
+      goMakeCollections (type) {
+        if (type == 0) {
+          if (this.configList_.tradeREceipt) {
+            if (this.isIpad || this.isDevice) {
+              this.goto('/makeCollections');
+            }else {
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '浏览器不支持此功能',
+              });
+            }
+          }else {
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '该账户无使用权限，请联系管理员',
+            });
+          }
+        }else if (type == 1) {
+          if (this.configList_.trandeDeposit) {
+            this.goto('/preLicensing')
+          }else {
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '该账户无使用权限，请联系管理员',
+            });
+          }
         }else {
-          this.$toastMsg({
-            toastTip: true,
-            toastTxt_: '浏览器不支持此功能',
-          });
+          if (this.configList_.trandeRecord) {
+            this.goto('/transactionQuery')
+          }else {
+            this.$toastMsg({
+              toastTip: true,
+              toastTxt_: '该账户无使用权限，请联系管理员',
+            });
+          }
         }
       },
 
@@ -131,13 +158,6 @@
           },
           onerror: body => {
             this.loadingShow = false;
-//            this.$toastMsg({
-//              toastTip: true,
-//              toastTxt_: '当前账号无支付收款权限',
-//            });
-//            setTimeout(() => {
-//              this.quitBack()
-//            },2000);
           }
         })
       },
@@ -166,7 +186,8 @@
           break;
         }else if (userAgentInfo.indexOf(Agents_[v]) != -1) {
           that.isDevice = true;
-          sessionStorage.tokenId = decodeURIComponent(window.location.href.split('token=')[1]);
+          sessionStorage.tokenId = decodeURIComponent(window.location.href.split('token=')[1]).split('/')[0];
+          this.getDeviceId( decodeURIComponent(window.location.href.split('token=')[1]).split('/')[1]);
           break;
         }
       }
@@ -188,17 +209,16 @@
         window.getBack = this.quitBack;
         window.getDeviceId = this.getDeviceId;
       }else if (this.isDevice) {
-        jsObj.getDeviceId();
         // 接受父页面发来的信息
-        window.addEventListener('message', (event) => {
-          let data = event.data;
-          console.log(data);
-          switch (data.cmd) {
-            case 'getParams':
-              console.log('data.params.deviceId', data.params.deviceId);
-              this.getDeviceId(data.params.deviceId);
-          }
-        })
+//        window.addEventListener('message', (event) => {
+//          let data = event.data;
+//          console.log(data);
+//          switch (data.cmd) {
+//            case 'getParams':
+//              console.log('data.params.deviceId', data.params.deviceId);
+//              this.getDeviceId(data.params.deviceId);
+//          }
+//        })
       }
     },
 
@@ -230,7 +250,6 @@
       img {
         display: block;
         width: 3.8vw;
-        height: 3.8vw;
       }
     }
     .index_content {
@@ -271,6 +290,29 @@
       .imgLists {
         .list {
           width: 31%;
+        }
+      }
+    }
+  }
+
+  .homeDevice {
+    .index_title {
+      height: 100px;
+      width: 100vw;
+      padding: 0;
+      span {
+        font-size: 26px;
+      }
+      img {
+        width: 60px;
+      }
+    }
+    .index_content {
+      width: 70vw;
+      top: 50%;
+      .imgLists {
+        .list {
+          width: 25%;
         }
       }
     }

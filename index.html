@@ -13,19 +13,33 @@
         padding: 0;
         margin: 0;
       }
+      .clearfix {
+        zoom: 1;
+      }
+      .clearfix:before {
+        content: '';
+        display: table;
+      }
+      .clearfix:after {
+        content: '';
+        display: table;
+        clear: both;
+        height: 0;
+      }
       .el-picker-panel.el-popper {
         position: fixed !important;
         top: 50% !important;
         left: 50% !important;
         transform: translate(-50%, -50%);
-        width: 6.8rem !important;
+        width: 32vw !important;
         border-radius: 10px !important;
       }
       .el-date-picker .el-picker-panel__content {
-        width: calc(6.8rem - 30px) !important;
+        width: calc(32vw - 30px) !important;
       }
       .el-date-picker__header-label {
-        font-size: .36rem !important;
+        font-size: .4rem !important;
+        line-height: 1 !important;
       }
       .el-picker-panel__icon-btn {
         margin-top: 0 !important;
@@ -34,13 +48,46 @@
         display: none;
       }
       .el-icon-arrow-right:before, .el-icon-arrow-left:before {
-        font-size: .36rem;
+        font-size: .4rem;
       }
       .el-date-table {
         font-size: .32rem !important;
       }
       .el-popper .popper__arrow, .el-popper .popper__arrow::after {
         display: none !important;
+      }
+      .el-date-table th {
+        padding: 8px 15px !important;
+        font-size: .4rem;
+      }
+      .el-date-table td span {
+        width: 100% !important;
+        height: 100% !important;
+        line-height: 4vw !important;
+        font-size: .4rem !important;
+      }
+      .el-date-table td div {
+        padding: .1vw !important;
+        height: 3.8vw !important;
+        width: 100% !important;
+      }
+      .el-date-table td {
+        width: 4vw !important;
+        height: 4vw !important;
+        padding: 0 !important;
+      }
+      .el-table::before {
+        display: none;
+      }
+      .el-date-table td.selected span {
+        border-radius: 50% !important;
+      }
+      .el-date-table td.selected div {
+        border-radius: 50% !important;
+      }
+      .el-button+.el-button {
+        font-size: .4rem;
+        padding: 5px 15px ;
       }
     </style>
   </head>
