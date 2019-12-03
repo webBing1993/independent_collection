@@ -5,7 +5,8 @@
         <div class="collection_fl_fixed">
           <div class="quitBack">
             <img src="../../assets/ic_chevron_left.png" alt="" @click="goBack">
-            <span @click="quit = true;"  v-if="!isDevice && !isPad">退出</span>
+            <span  @click="goBack">返回</span>
+            <span @click="quit = true;"  v-if="!isDevice && !isPad" class="quit">退出</span>
           </div>
           <div class="collection_fl_content">
             <div class="settle_accounts" @click="sweepCode">
@@ -703,11 +704,16 @@
           margin-right: .7vw;
         }
         span {
+          color: #333;
+          font-size: .44rem;
+        }
+        .quit {
           background: #F7F7F7;
           border-radius: 4px;
           font-size: .4rem;
           padding: 1vw 2vw;
           color: #666;
+          margin-left: .6rem;
         }
       }
       .collection_fl_content {
@@ -980,8 +986,12 @@
           margin-right: 8px;
         }
         span {
+          font-size: 16px;
+        }
+        .quit {
           font-size: 14px;
           padding: 1vw 2vw;
+          margin-left: 30px;
         }
       }
       .collection_fl_content {
@@ -1157,6 +1167,9 @@
         padding: 20px 0 30px;
         img {
           width: 34px;
+        }
+        span {
+          font-size: 22px;
         }
       }
       .collection_fl_content {

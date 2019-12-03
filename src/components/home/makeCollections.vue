@@ -2,7 +2,10 @@
   <div>
     <div :class="isPad ? 'makeCollections makeCollections_' : isDevice ? 'makeCollections makeCollectionsDevice' : 'makeCollections'" v-show="showMakeCollections">
       <div class="collection_title">
-        <img src="../../assets/ic_chevron_left.png" alt="" @click="goBack">
+        <div class="goBackBtn"  @click="goBack">
+          <img src="../../assets/ic_chevron_left.png" alt="">
+          <span>返回</span>
+        </div>
         <span class="quitBtn" @click="quit = true;" v-if="!isDevice && !isPad">退出</span>
       </div>
       <div class="depositTip" v-if="depositTip && configList.depositNative">
@@ -445,11 +448,19 @@
       top: 0;
       z-index: 1;
       text-align: left;
-      img {
-        display: inline-block;
-        width: 3.8vw;
+      .goBackBtn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        img {
+          width: 3.8vw;
+        }
+        span {
+          font-size: .44rem;
+          color: #333;
+        }
       }
-      span {
+      .quitBtn {
         position: absolute;
         right: 3.1vw;
         top: 50%;
@@ -619,11 +630,15 @@
     .collection_title {
       padding: 12px 15px;
       width: calc(100vw - 30px);
-      img {
-        width: 30px;
-        height: 30px;
+      .goBackBtn {
+        img {
+          width: 30px;
+        }
+        span {
+          font-size: 16px;
+        }
       }
-      span {
+      .quitBtn {
         font-size: 18px;
       }
     }
@@ -712,8 +727,13 @@
     .collection_title {
       padding: 20px 60px;
       width: calc(100vw - 120px);
-      img {
-        width: 34px;
+      .goBackBtn {
+        img {
+          width: 34px;
+        }
+        span {
+          font-size: 22px;
+        }
       }
     }
     .depositTip {

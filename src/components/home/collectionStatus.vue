@@ -2,7 +2,10 @@
   <div>
     <div :class="isDevice ? 'collectionStatus collectionStatus_' : 'collectionStatus'">
       <div class="collection_title">
-        <img src="../../assets/ic_chevron_left.png" alt="" @click="goBack">
+        <div class="goBackBtn"  @click="goBack">
+          <img src="../../assets/ic_chevron_left.png" alt="">
+          <span>返回</span>
+        </div>
         <span class="quitBtn" @click="quit = true;" v-if="!isDevice && !isPad">退出</span>
       </div>
       <div class="collection_content">
@@ -368,11 +371,19 @@
       background-color: #fff;
       text-align: left;
       z-index: 1;
-      img {
-        display: inline-block;
-        width: 3.8vw;
+      .goBackBtn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        img {
+          width: 3.8vw;
+        }
+        span {
+          font-size: .44rem;
+          color: #333;
+        }
       }
-      span {
+      .quitBtn {
         position: absolute;
         right: 3.1vw;
         top: 50%;
@@ -473,8 +484,13 @@
     .collection_title {
       padding: 20px 60px;
       width: calc(100vw - 120px);
-      img {
-        width: 34px;
+      .goBackBtn {
+        img {
+          width: 34px;
+        }
+        span {
+          font-size: 22px;
+        }
       }
     }
     .collection_content {

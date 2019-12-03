@@ -2,7 +2,10 @@
   <div>
     <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery'" v-show="transactionQuery">
       <div class="collection_title">
-        <img src="../../assets/ic_chevron_left.png" alt="" @click="goto(-1)" class="gobackBg">
+        <div class="gobackBg"  @click="goto(-1)">
+          <img src="../../assets/ic_chevron_left.png" alt="">
+          <span>返回</span>
+        </div>
         <div class="dates_search">
           <div class="dates">
             <span class="dates_title">交易时间</span>
@@ -872,7 +875,16 @@
         left: 3.1vw;
         top: 50%;
         transform: translateY(-50%);
-        width: 3.8vw;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        img {
+          width: 3.8vw;
+        }
+        span {
+          font-size: 0.44rem;
+          color: #333;
+        }
       }
       .dates_search {
         display: flex;
@@ -1158,7 +1170,12 @@
       width: calc(100vw - 30px);
       .gobackBg {
         margin-left: -15px;
-        width: 30px;
+        img {
+          width: 30px;
+        }
+        span {
+          font-size: 16px;
+        }
       }
       .dates_search {
         display: flex;
@@ -1302,7 +1319,12 @@
       padding: 24px 60px;
       .gobackBg {
         left: 60px;
-        width: 34px;
+        img {
+          width: 34px;
+        }
+        span {
+          font-size: 22px;
+        }
       }
       .dates_search {
         .dates {

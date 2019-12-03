@@ -2,8 +2,11 @@
   <div>
     <div :class="isIpad ? 'homeIndex_ homeIndex' : isDevice ? 'homeIndex homeDevice' : 'homeIndex '" v-show="showIndex">
       <div class="index_title">
-        <img src="../../assets/ic_chevron_left.png" alt="" @click="quitBack" v-if="!isDevice">
-        <span>欢迎使用移动收银</span>
+        <div class="goBackBtn" @click="quitBack" v-if="!isDevice">
+          <img src="../../assets/ic_chevron_left.png" alt="">
+          <span>返回</span>
+        </div>
+        <span class="homeTitle">欢迎使用移动收银</span>
       </div>
       <div class="index_content">
         <div class="imgLists">
@@ -239,7 +242,7 @@
       background-color: #fff;
       text-align: left;
       z-index: 2;
-      span {
+      .homeTitle {
         color: #666;
         font-size: .56rem;
         position: absolute;
@@ -247,9 +250,17 @@
         top: 50%;
         transform: translate(-50%, -50%);
       }
-      img {
-        display: block;
-        width: 3.8vw;
+      .goBackBtn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        img {
+          width: 3.8vw;
+        }
+        span {
+          font-size: .44rem;
+          color: #333;
+        }
       }
     }
     .index_content {
@@ -277,11 +288,15 @@
     .index_title {
       padding: 12px 15px;
       width: calc(100vw - 30px);
-      img {
-        width: 30px;
-        height: 30px;
+      .goBackBtn {
+        img {
+          width: 30px;
+        }
+        span {
+          font-size: 16px;
+        }
       }
-      span {
+      .homeTitle {
         font-size: 18px;
       }
     }
@@ -300,11 +315,16 @@
       height: 100px;
       width: 100vw;
       padding: 0;
-      span {
+      .homeTitle {
         font-size: 26px;
       }
-      img {
-        width: 60px;
+      .goBackBtn {
+        img {
+          width: 60px;
+        }
+        span {
+          font-size: 22px;
+        }
       }
     }
     .index_content {
