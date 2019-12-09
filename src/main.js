@@ -115,19 +115,19 @@ Axios.interceptors.response.use(response => {
         });
         break;
       default:
-        Vue.prototype.$toastMsg({
-          toastTip: true,
-          toastTxt_: '当前登录失效，请重新登录',
-        });
-        setTimeout(() => {
-          if (sessionStorage.getItem('isPad') == 'true') {
-            window.android.forceLogout();
-          }else if (sessionStorage.getItem('isDevice') == 'true') {
-            jsObj.LogOut();
-          }else {
-            router.replace('/login')
-          }
-        },2000)
+        // Vue.prototype.$toastMsg({
+        //   toastTip: true,
+        //   toastTxt_: '当前登录失效，请重新登录',
+        // });
+        // setTimeout(() => {
+        //   if (sessionStorage.getItem('isPad') == 'true') {
+        //     window.android.forceLogout();
+        //   }else if (sessionStorage.getItem('isDevice') == 'true') {
+        //     jsObj.LogOut();
+        //   }else {
+        //     router.replace('/login')
+        //   }
+        // },2000)
     }
     // 返回接口返回的错误信息
     return Promise.reject(error.response.data);
