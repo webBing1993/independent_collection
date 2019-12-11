@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'collectionSuccess_ collectionSuccess' : isDevice ? 'collectionSuccess collectionSuccessDevice' : 'collectionSuccess'" v-show="collectionSuccess">
+    <div :class="isPad ? 'collectionSuccess_ collectionSuccess' : isDevice ? 'collectionSuccess collectionSuccessDevice' : 'collectionSuccess '" v-show="collectionSuccess">
       <div class="collection_title">
         <span>{{payType == 1 ? '收款' : '预授权收款'}}</span>
       </div>
@@ -539,10 +539,10 @@
         .success_content {
           width: 100%;
           .success_title {
-            padding: 0 80px;
+            padding: 0 70px;
             height: 68px;
             line-height: 68px;
-            font-size: 27px;
+            font-size: 28px;
           }
           .lists {
             padding: 50px 62px;
