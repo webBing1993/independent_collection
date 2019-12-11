@@ -539,10 +539,10 @@
         .success_content {
           width: 100%;
           .success_title {
-            padding: 0 82px;
+            padding: 0 80px;
             height: 68px;
             line-height: 68px;
-            font-size: 28px;
+            font-size: 27px;
           }
           .lists {
             padding: 50px 62px;
