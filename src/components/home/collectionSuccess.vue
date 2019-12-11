@@ -539,7 +539,7 @@
         .success_content {
           width: 100%;
           .success_title {
-            padding: 0 70px;
+            padding: 0 66px;
             height: 68px;
             line-height: 68px;
             font-size: 28px;
