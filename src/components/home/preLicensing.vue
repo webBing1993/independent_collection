@@ -414,10 +414,12 @@
                 toastTip: true,
                 toastTxt_: '撤销成功',
               });
-              this.preLicensing = true;
-              this.loadingShow = true;
-              this.page = 1;
-              this.getSweepList();
+              setTimeout(() => {
+                this.preLicensing = true;
+                this.loadingShow = true;
+                this.page = 1;
+                this.getSweepList();
+              }, 200)
             }
             this.rescindTip = false;
             this.rescindLoading_ = false;
@@ -471,10 +473,12 @@
             },
             onsuccess: body => {
               if (body.data.code == 0 ||body.data.errcode == 0) {
-                this.preLicensing = true;
-                this.loadingShow = true;
-                this.page = 1;
-                this.getSweepList();
+                setTimeout(() => {
+                  this.preLicensing = true;
+                  this.loadingShow = true;
+                  this.page = 1;
+                  this.getSweepList();
+                }, 200)
               }
               this.sureTip = false;
               this.sureVal = '';
