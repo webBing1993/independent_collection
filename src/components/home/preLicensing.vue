@@ -251,7 +251,7 @@
           // 双屏设备
           this.sweepingTig = true;
           this.sweepingTig_ = false;
-          jsObj.OpenBarCode();
+          jsObj.OpenBarCode("");
         }
       },
 
