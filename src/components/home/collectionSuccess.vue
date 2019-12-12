@@ -141,6 +141,7 @@
 
       // 完成及入账公共接口
       sureFuntion(boolean) {
+        console.log('boolean', boolean);
         let data = {
           id: this.detail.id,
           flowId: this.detail.flowId,
@@ -270,7 +271,7 @@
       this.collectionSuccess = false;
       this.loadingShow = true;
       this.getTags();
-
+      console.log('detail', this.detail);
       if (this.isPad) {
         window.getBack = this.goBack;
       }
