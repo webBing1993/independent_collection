@@ -31,7 +31,7 @@
         loadingText: '加载中...',    // loading 语
         collectionFail: false,   // 模板的显示和隐藏
         payType: sessionStorage.getItem('payType') ? sessionStorage.getItem('payType') : 1,   // 1表示收款 2表示预授权收款
-        reason: sessionStorage.getItem('codeResult') ? sessionStorage.getItem('codeResult') != 'null' ? sessionStorage.getItem('codeResult').split(':')[1] : '支付超时了' : '支付超时了', // 支付失败的原因
+        reason: sessionStorage.getItem('codeResult') ? sessionStorage.getItem('codeResult') != 'null' ? sessionStorage.getItem('codeResult').indexOf(':') != -1 ? sessionStorage.getItem('codeResult').split(':')[1] : '支付超时了' : '支付超时了' : sessionStorage.getItem('codeResult'), // 支付失败的原因
         isPad: sessionStorage.getItem('isPad') == 'true' ? true : false,  // 判断是否是移动iPad
         isDevice: sessionStorage.getItem('isDevice') == 'true' ? true : false,  // 判断是否是双屏设备
       }
