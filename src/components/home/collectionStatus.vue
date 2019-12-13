@@ -257,7 +257,7 @@
               });
             }
             return;
-          }else if (((str.length >= 16 || str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 30))) {
+          }else if (((str.length >= 16 && str.length <= 24) && (parseInt(strTwo) >= 25 || parseInt(strTwo) <= 30))) {
             //  为支付宝的授权码
             if ((this.payType == 2 && this.support.aliPay.depositPay) || (this.payType == 1 && this.support.aliPay.nativePay)) {
               this.toastTip = true;
