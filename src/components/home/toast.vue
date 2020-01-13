@@ -55,7 +55,7 @@
     background: #000000;
     border-radius: 10px;
     width: 8.62rem;
-    height: 4.28rem;
+    min-height: 4.28rem;
     text-align: center;
     position: fixed;
     left: 50%;
@@ -70,6 +70,7 @@
     p {
       color: #fff;
       font-size: .56rem;
+      padding: 0 15px 15px;
     }
   }
 
