@@ -15,7 +15,7 @@
             </div>
             <div class="pre_search">
               <div class="search_title">请输入房号/交易单号搜索</div>
-              <input type="text" v-model="roomNo" v-if="!isPad" @input="roomNoSearch(roomNo)">
+              <input type="text" v-model="roomNo" v-if="!isPad" @input="roomNoSearch(0)">
               <input type="text" v-model="roomNo" v-else disabled>
               <div class="keyBords">
                 <span v-for="item in keyBords" @click="item == '清除' ? clear($event) : keyEntry($event, item)">{{item}}</span>
@@ -34,7 +34,7 @@
               :editable="false"
               type="date"
               format="yyyy/MM/dd"
-              placeholder="选择日期"
+              placeholder="请选择日期"
               @blur="closeShadow"
               @focus="changeTime"
             >
@@ -321,6 +321,7 @@
           this.roomNo = orderId;
           this.preLicensing = true;
           this.loadingShow = true;
+          this.timeVal = '';
           this.page = 1;
           this.getSweepList();
         }
@@ -332,14 +333,19 @@
         event.preventDefault();
         clearTimeout(this.timer);
         this.roomNo+=item;
-        this.roomNoSearch();
+        this.roomNoSearch(0);
       },
 
       // 搜索事件
-      roomNoSearch() {
+      roomNoSearch(type) {
         this.timer = setTimeout(() => {
           this.showContent = false;
           this.loadingShow = true;
+          if(type == 0) {
+            this.timeVal = '';
+          }else {
+            this.timeVal = this.datetimeparse(new Date().getTime(), 'yy/MM/DD');
+          }
           this.page = 1;
           this.getSweepList();
         }, 500)
@@ -350,7 +356,7 @@
         event.preventDefault();
         this.roomNo = '';
         clearTimeout(this.timer);
-        this.roomNoSearch();
+        this.roomNoSearch(1);
       },
 
       // 键盘删除事件
@@ -358,7 +364,11 @@
         event.preventDefault();
         clearTimeout(this.timer);
         this.roomNo = this.roomNo.substr(0, this.roomNo.length - 1);
-        this.roomNoSearch();
+        if(this.roomNo == '') {
+          this.roomNoSearch(1);
+        }else {
+          this.roomNoSearch(0);
+        }
       },
 
       // 日期
