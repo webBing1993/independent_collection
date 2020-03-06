@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery'" v-show="transactionQuery">
+    <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery transactionQuery_'" v-show="transactionQuery">
       <div class="collection_title">
         <div class="gobackBg"  @click="goto(-1)">
           <img src="../../assets/ic_chevron_left.png" alt="">
@@ -26,7 +26,7 @@
           <div class="shadow" v-if="dialogVisible"></div>
 
           <div class="search" @click="trandeTipShow()">
-            <input type="number" placeholder="请输入订单号查询" v-model="trandeVal" disabled>
+            <input type="number" placeholder="请输入订单号/房号/备注查询" v-model="trandeVal" disabled>
             <el-button type="primary" class="searchBtn" >搜索</el-button>
           </div>
         </div>
@@ -52,9 +52,30 @@
           </div>
         </div>
         <div class="tabs">
-          <span :class="tabIndex == 0 ? 'tab active' : 'tab'" @click="tabChange(0)">全部</span>
-          <span :class="tabIndex == 1 ? 'tab active' : 'tab'" @click="tabChange(1)">支付宝</span>
-          <span :class="tabIndex == 2 ? 'tab active' : 'tab'" @click="tabChange(2)">微信</span>
+          <el-dropdown trigger="click"  @command="handleCommand">
+              <span class="el-dropdown-link">
+                {{dataimgCurrent == 0 ? '交易标签' : dataimg[dataimgCurrent]}}<i><img src="../../assets/ic-right.png" alt=""></i>
+              </span>
+            <el-dropdown-menu slot="dropdown" :class="isPad ? 'menu1' : isDevice ? 'menu2' : 'menu3'">
+              <el-dropdown-item v-for="(item, index) in dataimg" :key="index" :command="index" :class="index == dataimgCurrent ? 'active' : ''">{{item}} <i class="el-icon-check" v-if="index == dataimgCurrent"></i></el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+          <el-dropdown trigger="click"  @command="tabChange">
+              <span class="el-dropdown-link">
+                {{tabIndex == 0 ? '支付方式' : payList[tabIndex]}}<i><img src="../../assets/ic-right.png" alt=""></i>
+              </span>
+            <el-dropdown-menu slot="dropdown" :class="isPad ? 'menu1' : isDevice ? 'menu2' : 'menu3'">
+              <el-dropdown-item v-for="(item, index) in payList" :key="index" :command="index" :class="index == tabIndex ? 'active' : ''">{{item}} <i class="el-icon-check" v-if="index == tabIndex"></i></el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+          <el-dropdown trigger="click"  @command="tabStatusChange">
+            <span class="el-dropdown-link">
+              {{statusCurrent == 0 ? '交易状态' : statusLists[statusCurrent].value}}<i><img src="../../assets/ic-right.png" alt=""></i>
+            </span>
+            <el-dropdown-menu slot="dropdown" :class="isPad ? 'menu1' : isDevice ? 'menu2' : 'menu3'">
+              <el-dropdown-item v-for="(item, index) in statusLists" :key="index" :command="index" :class="index == statusCurrent ? 'active' : ''">{{item.value}} <i class="el-icon-check" v-if="index == statusCurrent"></i></el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
           <el-button type="primary" :loading="deriveLoading" class="deriveBtn" @click="deriveBtn" v-if="configList.exportExcel">导出XSL</el-button>
         </div>
         <div class="infinite-list-wrapper" v-if="trandeLists.length != 0 && showContent">
@@ -75,7 +96,12 @@
               <el-table-column
                 prop="flowId"
                 label="商户订单号"
-                min-width="18%">
+                min-width="14%">
+              </el-table-column>
+              <el-table-column
+                prop="roomNo"
+                label="房号"
+                min-width="8%">
               </el-table-column>
               <el-table-column
                 prop="tradeType"
@@ -85,6 +111,16 @@
               <el-table-column
                 prop="operator"
                 label="操作员"
+                min-width="12%">
+              </el-table-column>
+              <el-table-column
+                prop="pmsRecordedTags"
+                label="交易标签"
+                min-width="10%">
+              </el-table-column>
+              <el-table-column
+                prop="remark"
+                label="备注信息"
                 min-width="12%">
               </el-table-column>
               <el-table-column
@@ -104,7 +140,7 @@
                     @click="handleDetailEdit(scope.$index, scope.row)">详情</el-button>
                 </template>
               </el-table-column>
-              <el-table-column min-width="10%">
+              <el-table-column min-width="12%">
                 <template slot-scope="scope">
                   <el-button
                     size="mini"
@@ -226,6 +262,18 @@
       </div>
     </div>
 
+    <!-- 完成入账弹框提示-->
+    <div :class="isPad ? 'quit quit_ pmsTip' : isDevice ? 'quit quitDevice pmsTip' : 'quit pmsTip'" v-if="surepmsTip">
+      <div class="shadow"></div>
+      <div class="quit_content">
+        <div class="quit_title"><img src="../../assets/ic-tip.png" alt="">是否需要入账？</div>
+        <div class="quit_tabs">
+          <el-button type="primary" :loading="surepmsCancleLoading" class="sureCancel cancel" tapmode  @click="surepmsCancle">否</el-button>
+          <el-button type="primary" :loading="surepmsLoading" class="sureCancel sure" tapmode  @click="surepms">是</el-button>
+        </div>
+      </div>
+    </div>
+
     <!-- 退出弹框提示-->
     <div :class="isPad ? 'quit quit_' : 'quit'" v-if="quit">
       <div class="shadow"></div>
@@ -264,7 +312,6 @@
           trande: {},
           total: {}
         }, // 交易笔数和总金额
-        tabIndex: 0,   // tab选中
         tradeType: '',  // 交易类型：ALIPAY-支付宝，WEIXINPAY-微信支付；不传，则默认查询所有
         deriveLoading: false,  //导出loading
         trandeLists: [],   // 交易数据
@@ -292,13 +339,73 @@
           depositRecordRefund: false,   // 收款退款
           depositAuthRefund: false,  // 预授权退款
           exportExcel:false,    // els表格
+          orederPmsRecorded: false,   // 入账操作
         },   // 权限
+        surepmsTip: false,     // 完成入账提示框
+        payList: ['全部', '支付宝', '微信支付'],    // 支付方式列表
+        tabIndex: 0,   // 支付方式tab选中
+        dataimg: [],    // 标签列表
+        dataimgCurrent: 0,  // 标签默认选中
+        statusCurrent: 0,   // 交易状态选中
+        statusLists: [
+          {
+            key: '',
+            value: '全部'
+          },
+          {
+            key: 'PAY_SUCCESS',
+            value: '支付成功'
+          },
+          {
+            key: 'DEPOSIT_CONSUME_SUCCESS',
+            value: '预授权完成'
+          },
+          {
+            key: 'REFUND_FAILED',
+            value: '退款失败'
+          },
+          {
+            key: 'REFUND_SUCCESS',
+            value: '退款成功'
+          }
+        ],    // 交易状态
+        surepmsCancleLoading: false,
+        surepmsLoading: false,
       }
     },
     methods: {
       ...mapActions([
-        'goto', 'replaceto', 'transactionList', 'exportXls', 'getAllNum', 'getAllTotal', 'transactionDetail', 'refund'
+        'goto', 'replaceto', 'transactionList', 'exportXls', 'getAllNum', 'getAllTotal', 'transactionDetail', 'refund', 'getTagList'
       ]),
+
+      // 获取标签
+      getTags() {
+        this.getTagList({
+          onsuccess: body => {
+            if (body.data.code == 0 || body.data.errcode == 0) {
+              this.dataimg.push('全部');
+              body.data.data.forEach(item => {
+                this.dataimg.push(item.name);
+              })
+              this.getAllNums();
+              this.getAllTotals();
+              this.page = 1;
+              this.getTransactionList(0);
+              console.log('this.dataimg', this.dataimg);
+            }
+            this.transactionQuery = true;
+            this.loadingShow = false;
+          },
+          onfail: body => {
+            this.transactionQuery = true;
+            this.loadingShow = false;
+          },
+          onerror: body => {
+            this.transactionQuery = true;
+            this.loadingShow = false;
+          }
+        })
+      },
 
       // 退出事件
       sure() {
@@ -363,6 +470,18 @@
         this.refundVal = '';
         this.showContent = false;
         this.loadingShow = true;
+        this.page = 1;
+        this.getTransactionList();
+      },
+      // 业务标签选中
+      handleCommand(command) {
+        this.dataimgCurrent = command;
+        this.page = 1;
+        this.getTransactionList();
+      },
+      // 交易状态选中
+      tabStatusChange(command) {
+        this.statusCurrent = command;
         this.page = 1;
         this.getTransactionList();
       },
@@ -602,41 +721,74 @@
           this.refundLoading = false;
           return;
         }else {
-          this.refund({
-            data: {
-              amount: parseFloat(this.refundVal)*100,
-              flowId: this.refundItem.flowId
-            },
-            onsuccess: body => {
-              if (body.data.code == 0 || body.data.errcode == 0) {
-                this.$toastMsg({
-                  toastTip: true,
-                  toastTxt_: '退款成功',
-                });
-                setTimeout(() => {
-                  this.getAllNums();
-                  this.getAllTotals();
-                  this.page = 1;
-                  this.getTransactionList(0);
-                }, 200)
-              }
-              this.refundVal = '';
-              this.refundLoading = false;
-              this.refundTip = false;
-            },
-            onfail: body => {
-              this.refundVal = '';
-              this.refundLoading = false;
-              this.refundTip = false;
-            },
-            onerror: body => {
-              this.refundVal = '';
-              this.refundLoading = false;
-              this.refundTip = false;
-            }
-          })
+          if (this.configList.orederPmsRecorded && this.refundItem.pmsRecordedStatus == 'SUCCESS') {
+            this.surepmsTip = true;
+            this.sureTip = false;
+            this.refundLoading = false;
+            this.refundTip = false;
+          }else {
+            this.pmsQuit(false);
+          }
         }
 
+      },
+
+      // 完成入账取消
+      surepmsCancle() {
+        this.surepmsCancleLoading = true;
+        this.pmsQuit(false);
+      },
+
+      // 完成入账
+      surepms() {
+        this.surepmsLoading = true;
+        this.pmsQuit(true);
+      },
+
+      pmsQuit(pmsRecord) {
+        this.refund({
+          data: {
+            amount: parseFloat(this.refundVal)*100,
+            flowId: this.refundItem.flowId,
+            pmsRecord: pmsRecord
+          },
+          onsuccess: body => {
+            if (body.data.code == 0 || body.data.errcode == 0) {
+              this.$toastMsg({
+                toastTip: true,
+                toastTxt_: '退款成功',
+              });
+              setTimeout(() => {
+                this.getAllNums();
+                this.getAllTotals();
+                this.page = 1;
+                this.getTransactionList(0);
+              }, 200)
+            }
+            this.surepmsCancleLoading = false;
+            this.surepmsLoading = false;
+            this.refundVal = '';
+            this.refundLoading = false;
+            this.refundTip = false;
+            this.surepmsTip = false;
+          },
+          onfail: body => {
+            this.surepmsCancleLoading = false;
+            this.surepmsLoading = false;
+            this.refundVal = '';
+            this.refundLoading = false;
+            this.refundTip = false;
+            this.surepmsTip = false;
+          },
+          onerror: body => {
+            this.surepmsCancleLoading = false;
+            this.surepmsLoading = false;
+            this.refundVal = '';
+            this.refundLoading = false;
+            this.refundTip = false;
+            this.surepmsTip = false;
+          }
+        })
       },
 
       // 加载数据更多
@@ -708,9 +860,11 @@
             tradeStartDay: arr[0],
             tradeEndDay: arr[1],
             tradeType: this.tradeType,
-            flowId: this.trandeVal,
+            keywords: this.trandeVal,
             page: this.page,
             pageSize: 10,
+            pmsRecordedTags: this.dataimgCurrent != 0 ? this.dataimg[this.dataimgCurrent] : '',
+            statuses: this.statusCurrent == 0 ? null : [this.statusLists[this.statusCurrent].key]
           },
           onsuccess: body => {
             this.loading = false;
@@ -723,6 +877,15 @@
             this.showContent = true;
             if (body.data.code == 0 || body.data.errcode == 0) {
               body.data.data.forEach(item => {
+                if (item.pmsRecordedTags == null || item.pmsRecordedTags == '') {
+                  item.pmsRecordedTags = '-';
+                }
+                if (item.remark == null || item.remark == '') {
+                  item.remark = '-';
+                }
+                if (item.roomNo == null || item.roomNo == '') {
+                  item.roomNo = '-';
+                }
                 item.tradeFee_ = "¥" + (item.tradeFee/100).toFixed(2);
                 item.tradeTime = this.datetimeparse(item.tradeTime, 'yy/MM/dd hh:mm');
                 item.operator = item.operator == null ? "-" : item.operator;
@@ -734,8 +897,6 @@
                   item.tradeStatus_ = '授权失败'
                 }else if (item.status == 'AUTH_SUCCESS') {
                   item.tradeStatus_ = '授权成功'
-                }else if (item.status == 'AUTH_FAILED') {
-                  item.tradeStatus_ = '授权失败'
                 }else if (item.status == 'PAY_FAILED') {
                   item.tradeStatus_ = '支付失败'
                 }else if (item.status == 'PAY_SUCCESS') {
@@ -759,7 +920,11 @@
                 }else if (item.status == 'REFUND_FAILED') {
                   item.tradeStatus_ = '退款失败'
                 }else if (item.status == 'REFUND_SUCCESS') {
-                  item.tradeStatus_ = '退款成功'
+                  if (item.allRefunded) {
+                    item.tradeStatus_ = '已退款';
+                  }else {
+                    item.tradeStatus_ = '部分退款 \n'+"¥" + (item.refundFee/100).toFixed(2);
+                  }
                 }
               });
               if (body.data.data.length >= 10) {
@@ -819,6 +984,9 @@
         if (item.authority == 'independent_trade_trading_record_export_excel') {
           this.configList.exportExcel = true;
         }
+        if (item.authority == 'independent_trade_receipt_order_pms_recorded') {
+          this.configList.orederPmsRecorded = true;
+        }
       });
 
       let startTime = this.datetimeparse(new Date(new Date(new Date().toLocaleDateString()).getTime()), 'yy/MM/dd');
@@ -828,10 +996,11 @@
     mounted () {
       this.transactionQuery = false;
       this.loadingShow = true;
-      this.getAllNums();
-      this.getAllTotals();
-      this.page = 1;
-      this.getTransactionList(0);
+      this.getTags();
+//      this.getAllNums();
+//      this.getAllTotals();
+//      this.page = 1;
+//      this.getTransactionList(0);
 
       if (this.isPad) {
         window.getBack = this.goBack;
@@ -1056,13 +1225,28 @@
         justify-content: flex-start;
         position: relative;
         margin-bottom: 1.6vw;
-        .tab {
+        .el-dropdown {
+          margin-right: .4rem;
+        }
+        .el-dropdown:last-of-type {
+          margin-right: 0;
+        }
+        span {
+          padding: .5vw 1.6vw;
+          display: block;
+          height: 40px;
+          line-height: 40px;
+          background: #F1F6FF;
+          border-radius: 40px;
           cursor: pointer;
-          border-radius: 4px;
-          padding: .12rem .4rem;
-          color: #333333;
+          /*padding: .12rem .4rem;*/
           font-size: .4rem;
-          margin-right: 5.8vw;
+          min-width: 7.2vw;
+          color: #4C88FF;
+          i {
+            margin-left: .5rem;
+            width: .18rem;
+          }
         }
         .active {
           background: #4C88FF;
@@ -1121,7 +1305,7 @@
           font-size: .32rem;
           font-family: 'SourceHanSansCN-Medium';
         }
-        /deep/ .el-table--enable-row-transition .el-table__body td:nth-of-type(5) .cell {
+        /deep/ .el-table--enable-row-transition .el-table__body td:nth-of-type(8) .cell {
           color: #FF4B66;
           font-family: 'SourceHanSansCN-Medium';
         }
@@ -1265,10 +1449,16 @@
       }
       .tabs {
         margin-bottom: 12px;
-        .tab {
+        .el-dropdown {
+          margin-right: 30px
+        }
+        span {
           font-size: 14px;
           padding: 3px 15px;
-          margin-right: 20px;
+          i {
+            margin-left: 15px;
+            width: 12px;
+          }
         }
         .active {
           font-size: 16px;
@@ -1421,11 +1611,16 @@
       }
       .tabs {
         margin-bottom: 40px;
-        .tab {
-          border-radius: 4px;
+        .el-dropdown {
+          margin-right: 30px
+        }
+        span {
           padding: 10px 30px;
           font-size: 24px;
-          margin-right: 150px;
+          i {
+            margin-left: 30px;
+            width: 18px;
+          }
         }
         .active {
           font-size: 24px;
@@ -2014,8 +2209,15 @@
         border-bottom: 1px solid #D8D8D8;
         color: #0B0B0B;
         font-size: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         font-weight: bold;
+        img {
+          width: 28px;
+          margin-right: 12px;
+        }
       }
       .quit_tabs {
         display: flex;
@@ -2047,6 +2249,75 @@
         }
       }
     }
+  }
+  .pmsTip {
+    .quit_content {
+      .quit_title {
+        border-bottom: none;
+      }
+      .quit_tabs {
+        padding: 0 15px 15px;
+        justify-content: space-around;
+        .sureCancel {
+          width: 40%;
+          position: relative;
+          padding: 15px 0;
+          font-size: 24px;
+          text-align: center;
+          border-radius: 40px;
+        }
+        .sureCancel:first-of-type {
+          color: #909399;
+          background: #EEEEEE;
+          border: none;
+        }
+        .sureCancel:last-of-type {
+          color: #ffffff;
+          background: #4C88FF;
+        }
+        .sureCancel:first-of-type:after {
+          display: none;
+        }
+      }
+    }
+  }
+  .el-dropdown-menu {
+    margin-top: 0 !important;
+    .active {
+      color: #4C88FF;
+      position: relative;
+      padding-right: 40px;
+      i {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+  }
+  .menu3 {
+    width: 3.4rem !important;
+    .el-dropdown-menu__item {
+      font-size: .4rem;
+      line-height: .8rem;
+    }
+  }
+  .menu1 {
+    width: 128px !important;
+    .el-dropdown-menu__item {
+      font-size: 14px;
+      line-height: 30px;
+    }
+  }
+  .menu2 {
+    width: 210px !important;
+    .el-dropdown-menu__item {
+      font-size: 24px;
+      line-height: 48px;
+    }
+  }
+  /deep/ .el-dropdown-menu {
+    left: 0 !important;
   }
 
 </style>
