@@ -2,7 +2,7 @@
     <div style="position: fixed;z-index: 99999999;left: 0;top: 50%;transform: translate(0, -50%);">
       <div :class="isPad ? 'loading isPad' : 'loading'" ref="loading">
         <img src="../../assets/loading.gif" alt="">
-        <p>{{loadingText}}</p>
+        <p></p> <!--{{loadingText}}-->
       </div>
     </div>
 </template>

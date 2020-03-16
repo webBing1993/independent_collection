@@ -509,7 +509,7 @@
                 this.loadingShow = true;
                 this.page = 1;
                 this.getSweepList();
-              }, 200)
+              }, 500)
             }
             this.surepmsCancleLoading = false;
             this.surepmsLoading = false;
@@ -613,7 +613,7 @@
                 this.loadingShow = true;
                 this.page = 1;
                 this.getSweepList();
-              }, 200)
+              }, 500)
             }
             this.surepmsCancleLoading = false;
             this.surepmsLoading = false;

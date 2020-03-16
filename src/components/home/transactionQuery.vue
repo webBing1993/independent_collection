@@ -763,7 +763,7 @@
                 this.getAllTotals();
                 this.page = 1;
                 this.getTransactionList(0);
-              }, 200)
+              }, 500)
             }
             this.surepmsCancleLoading = false;
             this.surepmsLoading = false;
