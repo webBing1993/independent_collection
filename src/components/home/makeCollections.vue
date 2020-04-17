@@ -424,7 +424,6 @@
     mounted () {
       this.showMakeCollections = false;
       this.getSupport();
-
       if (this.isPad) {
         window.getSweepIpadOrderId = this.getCode;
         window.getBack = this.goBack;
@@ -673,8 +672,8 @@
             width: calc(100% - .2rem);
             border-bottom: 1px solid #eee;
             input {
-              width: 46px;
-              font-size: 34px;
+              width: 68px;
+              font-size: 32px;
             }
             span {
               font-size: 16px;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery transactionQuery_'" v-show="transactionQuery">
+    <div :class="isPad ? 'transactionQuery_ transactionQuery' : isDevice ? 'transactionQuery transactionQueryDevice' : 'transactionQuery'" v-show="transactionQuery">
       <div class="collection_title">
         <div class="gobackBg"  @click="goto(-1)">
           <img src="../../assets/ic_chevron_left.png" alt="">
@@ -1078,16 +1078,17 @@
               display: block;
             }
           }
-          /deep/ .el-input__prefix {
+          /deep/ .el-input__prefix,
+          /deep/ .el-input__suffix {
             display: none;
           }
           /deep/ .el-date-editor.el-input, .el-date-editor.el-input__inner {
-            width: 1px;
+            width: 0px;
             background-color: #f7f7f7;
           }
           /deep/ .el-input--prefix .el-input__inner {
             padding: 0;
-            width: 1px;
+            width: 0px;
             border: none;
             background-color: #f7f7f7;
           }
@@ -1369,7 +1370,7 @@
           padding: 0 10px;
           .dates_title {
             font-size: 14px;
-            width: 30px;
+            width: 75px;
           }
           .datesArr {
             font-size: 14px;
@@ -1534,12 +1535,12 @@
             display: none;
           }
           /deep/ .el-date-editor.el-input, .el-date-editor.el-input__inner {
-            width: 1px;
+            /*width: 1px;*/
             background-color: #f7f7f7;
           }
           /deep/ .el-input--prefix .el-input__inner {
             padding: 0;
-            width: 1px;
+            /*width: 1px;*/
             border: none;
             background-color: #f7f7f7;
           }
