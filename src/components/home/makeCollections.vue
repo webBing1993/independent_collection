@@ -29,10 +29,10 @@
             </div>
           </div>
           <div class="collectionContent_fr">
-            <!-- 发起收款btn--> <!-- v-if="configList.depositAuth && (support.aliPay.nativePay || support.weixinPay.nativePay)"-->
-            <div class="btn" @click="makeCollection(1)"><img src="../../assets/btn1.png" alt=""></div>
-            <!-- 发起预授权btn--> <!--  v-if="configList.depositNative && (support.weixinPay.depositPay || support.aliPay.depositPay)"-->
-            <div class="btn" @click="makeCollection(2)"><img src="../../assets/btn2.png" alt=""></div>
+            <!-- 发起收款btn--> <!-- -->
+            <div class="btn" v-if="configList.depositAuth && (support.aliPay.nativePay || support.weixinPay.nativePay)" @click="makeCollection(1)"><img src="../../assets/btn1.png" alt=""></div>
+            <!-- 发起预授权btn--> <!--  -->
+            <div class="btn" v-if="configList.depositNative && (support.weixinPay.depositPay || support.aliPay.depositPay)" @click="makeCollection(2)"><img src="../../assets/btn2.png" alt=""></div>
             <div class="tig">
               <span>支持</span>
               <img src="../../assets/ic-wx.png" v-if="support.weixinPay.depositPay || support.weixinPay.nativePay" alt="">
